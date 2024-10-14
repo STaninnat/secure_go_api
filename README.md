@@ -1,2 +1,2 @@
 # capstone_project
-Repofor capstone project
+Repository for capstone project
