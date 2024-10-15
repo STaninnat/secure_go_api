@@ -24,3 +24,34 @@ func databaseUserToUser(user database.User) (User, error) {
 		ApiKey:    user.ApiKey,
 	}, nil
 }
+
+type Post struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Post      string    `json:"post"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+func databasePostToPost(post database.Post) (Post, error) {
+	return Post{
+		ID:        post.ID,
+		CreatedAt: post.CreatedAt,
+		UpdatedAt: post.UpdatedAt,
+		Post:      post.Post,
+		UserID:    post.UserID,
+	}, nil
+}
+
+func databasePostsToPosts(posts []database.Post) ([]Post, error) {
+	postsResult := make([]Post, len(posts))
+	for i, post := range posts {
+		var err error
+		postsResult[i], err = databasePostToPost(post)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return postsResult, nil
+}

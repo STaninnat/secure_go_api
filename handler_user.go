@@ -55,7 +55,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	respondWithJSON(w, http.StatusCreated, userResp)
 }
 
-func (apicfg apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user database.User) {
+func (apicfg *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request, user database.User) {
 	userResp, err := databaseUserToUser(user)
 	if err != nil {
 		log.Println(err)

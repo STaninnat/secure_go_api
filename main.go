@@ -30,19 +30,20 @@ func main() {
 		log.Fatal("warning: PORT environment variable is not set")
 	}
 
+	apicfg := apiConfig{}
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Println("warning: DATABASE_URL environment variable is not set")
 		log.Println("Running without CRUD endpoints")
-	}
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		log.Fatal("warning: can't connect to database: ", err)
-	}
-	dbQueries := database.New(db)
-
-	apicfg := apiConfig{
-		DB: dbQueries,
+	} else {
+		db, err := sql.Open("postgres", dbURL)
+		if err != nil {
+			log.Fatal("warning: can't connect to database: ", err)
+		}
+		dbQueries := database.New(db)
+		apicfg.DB = dbQueries
+		log.Println("Connected to database!")
 	}
 
 	router := chi.NewRouter()
@@ -58,7 +59,10 @@ func main() {
 	v1Router := chi.NewRouter()
 
 	v1Router.Post("/users", apicfg.handlerUsersCreate)
-	v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerGetUser))
+	v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
+
+	v1Router.Post("/posts", apicfg.middlewareAuth(apicfg.handlerPostsCreate))
+	v1Router.Get("/posts", apicfg.middlewareAuth(apicfg.handlerPostsGet))
 
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerError)
