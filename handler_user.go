@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/STaninnat/capstone_project/internal/auth"
 	"github.com/STaninnat/capstone_project/internal/database"
 	"github.com/google/uuid"
 )
@@ -56,19 +55,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	respondWithJSON(w, http.StatusCreated, userResp)
 }
 
-func (apicfg apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request) {
-	apiKey, err := auth.GetAPIKey(r.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't find api key")
-		return
-	}
-
-	user, err := apicfg.DB.GetUserByAPIKey(r.Context(), apiKey)
-	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Couldn't get user")
-		return
-	}
-
+func (apicfg apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user database.User) {
 	userResp, err := databaseUserToUser(user)
 	if err != nil {
 		log.Println(err)
