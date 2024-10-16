@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"embed"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -19,10 +21,13 @@ type apiConfig struct {
 	DB *database.Queries
 }
 
+//go:embed static/*
+var staticFiles embed.FS
+
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Printf("warning: assuming default configuration. .env unreadable: %v", err)
+		log.Printf("warning: assuming default configuration. .env unreadable | %v", err)
 	}
 
 	port := os.Getenv("PORT")
@@ -39,7 +44,7 @@ func main() {
 	} else {
 		db, err := sql.Open("postgres", dbURL)
 		if err != nil {
-			log.Fatal("warning: can't connect to database: ", err)
+			log.Fatal("warning: can't connect to database | ", err)
 		}
 		dbQueries := database.New(db)
 		apicfg.DB = dbQueries
@@ -49,20 +54,33 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
-		AllowedMethods:   []string{"DELETE", "GET", "OPTIONS", "POST", "PUT"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
 
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		f, err := staticFiles.Open("static/index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	v1Router := chi.NewRouter()
+	if apicfg.DB != nil {
+		v1Router.Post("/users", apicfg.handlerUsersCreate)
+		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 
-	v1Router.Post("/users", apicfg.handlerUsersCreate)
-	v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
-
-	v1Router.Post("/posts", apicfg.middlewareAuth(apicfg.handlerPostsCreate))
-	v1Router.Get("/posts", apicfg.middlewareAuth(apicfg.handlerPostsGet))
+		v1Router.Post("/posts", apicfg.middlewareAuth(apicfg.handlerPostsCreate))
+		v1Router.Get("/posts", apicfg.middlewareAuth(apicfg.handlerPostsGet))
+	}
 
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerError)
