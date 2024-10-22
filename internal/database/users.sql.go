@@ -13,9 +13,9 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, created_at, updated_at, name, api_key)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, created_at, updated_at, name, api_key
+INSERT INTO users (id, created_at, updated_at, name, password, api_key, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, created_at, updated_at, name, password, api_key, expires_at
 `
 
 type CreateUserParams struct {
@@ -23,7 +23,9 @@ type CreateUserParams struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	Password  string
 	ApiKey    string
+	ExpiresAt time.Time
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -32,7 +34,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
+		arg.Password,
 		arg.ApiKey,
+		arg.ExpiresAt,
 	)
 	var i User
 	err := row.Scan(
@@ -40,14 +44,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Name,
+		&i.Password,
 		&i.ApiKey,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
 const getUserByAPIKey = `-- name: GetUserByAPIKey :one
 
-SELECT id, created_at, updated_at, name, api_key FROM users WHERE api_key = $1
+SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE api_key = $1
 `
 
 func (q *Queries) GetUserByAPIKey(ctx context.Context, apiKey string) (User, error) {
@@ -58,7 +64,49 @@ func (q *Queries) GetUserByAPIKey(ctx context.Context, apiKey string) (User, err
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Name,
+		&i.Password,
 		&i.ApiKey,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getUserByName = `-- name: GetUserByName :one
+
+SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE name = $1
+`
+
+func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByName, name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Password,
+		&i.ApiKey,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getuserByID = `-- name: GetuserByID :one
+
+SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE id = $1
+`
+
+func (q *Queries) GetuserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getuserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Password,
+		&i.ApiKey,
+		&i.ExpiresAt,
 	)
 	return i, err
 }

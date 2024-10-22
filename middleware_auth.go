@@ -11,15 +11,21 @@ type authhandler func(http.ResponseWriter, *http.Request, database.User)
 
 func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		apiKey, err := auth.GetAPIKey(r.Header)
+		tokenString, err := auth.GetToken(r.Header)
 		if err != nil {
-			respondWithError(w, http.StatusUnauthorized, "Couldn't find apikey")
+			respondWithError(w, http.StatusUnauthorized, "couldn't find token")
 			return
 		}
 
-		user, err := apicfg.DB.GetUserByAPIKey(r.Context(), apiKey)
+		claims, err := validateJWTToken(tokenString, apicfg.JWTSecret)
 		if err != nil {
-			respondWithError(w, http.StatusNotFound, "Couldn't get user")
+			respondWithError(w, http.StatusUnauthorized, "invalid token")
+			return
+		}
+
+		user, err := apicfg.DB.GetuserByID(r.Context(), claims.UserID)
+		if err != nil {
+			respondWithError(w, http.StatusNotFound, "couldn't get user")
 			return
 		}
 

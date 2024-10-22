@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Capstone</title>
 </head>
 
@@ -71,17 +72,22 @@
 
         async function createUser() {
             const nameField = document.getElementById('nameField');
+            const name = nameField.value.trim();
+            if (!name || name === '') {
+                alert('Please enter a valid name');
+                return;
+            }
             const response = await fetchWithAlert(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: nameField.value })
+                body: JSON.stringify({ name: name.value })
             });
             const user = await response.json();
             localStorage.setItem('currentUserAPIKey', user.api_key);
+
             login()
             alert(`User Created: ${user.name}`);
 
-            // Once a user is created, hide the user creation section and show the post section
             document.getElementById('userCreationContainer').style.display = 'none';
             document.getElementById('postSection').style.display = 'flex';
         }
@@ -90,9 +96,12 @@
             localStorage.removeItem('currentUserAPIKey');
             currentUser = null;
 
-            // When a user logs out, show the user creation section and hide the post section
             document.getElementById('userCreationContainer').style.display = 'block';
             document.getElementById('postSection').style.display = 'none';
+
+            document.getElementById('userCreationContainer').style.display = 'inline-flex';
+            document.getElementById('userCreationContainer').style.justifyContent = 'center';
+            document.getElementById('userCreationContainer').style.alignItems = 'center';
         }
 
         async function login() {
@@ -100,16 +109,14 @@
             if (!currentUserAPIKey) {
                 return;
             }
+
             const user = await getUser();
             currentUser = user;
             currentUserAPIKey = user.api_key;
             await loadPosts();
 
-            // When a user logs in, hide the user creation section and show the post section
             document.getElementById('userCreationContainer').style.display = 'none';
             document.getElementById('postSection').style.display = 'flex';
-
-            // Display a greeting message
             document.getElementById('greetingMessage').textContent = `Hello ${user.name}!`;
         }
 
@@ -142,25 +149,25 @@
             padding: 0;
             height: 100vh;
         }
-
+        
         .section {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-
+        
         textarea {
             width: 300px;
             height: 100px;
             margin-bottom: 10px;
         }
-
+        
         input {
             display: block;
             padding: 1rem;
         }
-
+        
         button {
             background-color: var(--primary);
             color: var(--light);
@@ -170,15 +177,15 @@
             text-decoration: none;
             display: inline-block;
             font-size: 16px;
-            margin: 4px 2px;
+            margin: 10px 2px;
             cursor: pointer;
             transition-duration: 0.4s;
         }
-
+        
         button:hover {
             background-color: var(--primary-light);
         }
-
+        
         .post {
             width: 300px;
             background-color: var(--grey);

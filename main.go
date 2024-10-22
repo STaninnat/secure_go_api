@@ -18,7 +18,8 @@ import (
 )
 
 type apiConfig struct {
-	DB *database.Queries
+	DB        *database.Queries
+	JWTSecret string
 }
 
 //go:embed static/*
@@ -33,6 +34,11 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("warning: PORT environment variable is not set")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("warning: JWT_SECRET environment variable is not set")
 	}
 
 	apicfg := apiConfig{}
@@ -53,7 +59,7 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{"https://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
@@ -77,6 +83,8 @@ func main() {
 	if apicfg.DB != nil {
 		v1Router.Post("/users", apicfg.handlerUsersCreate)
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
+
+		v1Router.Post("/login", apicfg.handlerLogin)
 
 		v1Router.Post("/posts", apicfg.middlewareAuth(apicfg.handlerPostsCreate))
 		v1Router.Get("/posts", apicfg.middlewareAuth(apicfg.handlerPostsGet))
