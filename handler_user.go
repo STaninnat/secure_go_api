@@ -11,33 +11,60 @@ import (
 
 	"github.com/STaninnat/capstone_project/internal/database"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name string `json:"name"`
+		Name     string `json:"name"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters")
+		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
 		return
 	}
 
-	apiKey, err := generateRandomSHA256HASH()
+	_, err = apicfg.DB.GetUserByName(r.Context(), params.Name)
+	if err == nil {
+		respondWithError(w, http.StatusBadRequest, "username already exists")
+		return
+	}
+
+	if params.Password == "" {
+		respondWithError(w, http.StatusBadRequest, "please enter a password")
+		return
+	}
+	if len(params.Password) < 8 {
+		respondWithError(w, http.StatusBadRequest, "password must be least 8 ")
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't hash password")
+		return
+	}
+
+	_, hashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate apikey")
 		return
 	}
+
+	apiKeyExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 
 	user, err := apicfg.DB.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name:      params.Name,
-		ApiKey:    apiKey,
+		Password:  string(hashedPassword),
+		ApiKey:    hashedApiKey,
+		ExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
 		log.Println(err)
@@ -64,6 +91,19 @@ func (apicfg *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request,
 	}
 
 	respondWithJSON(w, http.StatusOK, userResp)
+}
+
+func generateAndHashAPIKey() (string, string, error) {
+	apiKey, err := generateRandomSHA256HASH()
+	if err != nil {
+		return "", "", err
+	}
+	hashedKey, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
+	if err != nil {
+		return "", "", err
+	}
+
+	return apiKey, string(hashedKey), nil
 }
 
 func generateRandomSHA256HASH() (string, error) {

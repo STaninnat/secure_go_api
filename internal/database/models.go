@@ -23,5 +23,7 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	Password  string
 	ApiKey    string
+	ExpiresAt time.Time
 }
