@@ -19,7 +19,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := apicfg.DB.GetUserByAPIKey(r.Context(), params.ApiKey)
+	user, err := apicfg.DB.GetUser(r.Context(), params.ApiKey)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid api key")
 		return
