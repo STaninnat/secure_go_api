@@ -49,7 +49,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_, hashedApiKey, err := generateAndHashAPIKey()
+	apiKey, hashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate apikey")
 		return
@@ -58,13 +58,13 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	apiKeyExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 
 	user, err := apicfg.DB.CreateUser(r.Context(), database.CreateUserParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		Name:      params.Name,
-		Password:  string(hashedPassword),
-		ApiKey:    hashedApiKey,
-		ExpiresAt: apiKeyExpiresAt,
+		ID:              uuid.New(),
+		CreatedAt:       time.Now().UTC(),
+		UpdatedAt:       time.Now().UTC(),
+		Name:            params.Name,
+		Password:        string(hashedPassword),
+		ApiKey:          hashedApiKey,
+		ApiKeyExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
 		log.Println(err)
@@ -78,6 +78,8 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		respondWithError(w, http.StatusInternalServerError, "couldn't convert user")
 		return
 	}
+
+	userResp.ApiKey = apiKey
 
 	respondWithJSON(w, http.StatusCreated, userResp)
 }

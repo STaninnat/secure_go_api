@@ -19,11 +19,20 @@ type Post struct {
 }
 
 type User struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Password  string
-	ApiKey    string
-	ExpiresAt time.Time
+	ID              uuid.UUID
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Name            string
+	Password        string
+	ApiKey          string
+	ApiKeyExpiresAt time.Time
+}
+
+type UsersKey struct {
+	ID                    uuid.UUID
+	CreatedAt             time.Time
+	AccessTokenExpiresAt  time.Time
+	RefreshToken          string
+	RefreshTokenExpiresAt time.Time
+	UserID                uuid.UUID
 }

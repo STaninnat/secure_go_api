@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -19,6 +20,11 @@ func (apicfg *apiConfig) handlerPostsCreate(w http.ResponseWriter, r *http.Reque
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters")
+		return
+	}
+
+	if strings.TrimSpace(params.Post) == "" {
+		respondWithError(w, http.StatusBadRequest, "post content cannot be empty")
 		return
 	}
 
