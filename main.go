@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"embed"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -18,8 +17,9 @@ import (
 )
 
 type apiConfig struct {
-	DB        *database.Queries
-	JWTSecret string
+	DB            *database.Queries
+	JWTSecret     string
+	RefreshSecret string
 }
 
 //go:embed static/*
@@ -50,7 +50,7 @@ func main() {
 	} else {
 		db, err := sql.Open("postgres", dbURL)
 		if err != nil {
-			log.Fatal("warning: can't connect to database | ", err)
+			log.Fatalf("warning: can't connect to database: %v", err)
 		}
 		dbQueries := database.New(db)
 		apicfg.DB = dbQueries
@@ -59,7 +59,7 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*"},
+		AllowedOrigins:   []string{"https://*", "http://localhost:8080"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
@@ -67,15 +67,12 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		f, err := staticFiles.Open("static/index.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer f.Close()
-		if _, err := io.Copy(w, f); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "static/index.html")
+		} else {
+			fileServer := http.FileServer(http.FS(staticFiles))
+			http.StripPrefix("/", fileServer).ServeHTTP(w, r)
 		}
 	})
 
@@ -85,6 +82,8 @@ func main() {
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 
 		v1Router.Post("/login", apicfg.handlerLogin)
+
+		v1Router.Post("/refresh", apicfg.handlerRefreshKey)
 
 		v1Router.Post("/posts", apicfg.middlewareAuth(apicfg.handlerPostsCreate))
 		v1Router.Get("/posts", apicfg.middlewareAuth(apicfg.handlerPostsGet))

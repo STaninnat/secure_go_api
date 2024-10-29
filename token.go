@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,15 +10,13 @@ import (
 )
 
 type Claims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	Username string    `json:"username"`
+	UserID uuid.UUID `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func generateJWTToken(userID uuid.UUID, username string, secret string, expiresAt time.Time) (string, error) {
+func generateJWTToken(userID uuid.UUID, secret string, expiresAt time.Time) (string, error) {
 	claims := Claims{
-		UserID:   userID,
-		Username: username,
+		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
@@ -39,8 +38,10 @@ func validateJWTToken(tokenString string, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
-
-	if err != nil || !token.Valid {
+	if err != nil {
+		return nil, fmt.Errorf("could not parse token: %w", err)
+	}
+	if !token.Valid {
 		return nil, errors.New("invalid token")
 	}
 

@@ -13,19 +13,19 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, created_at, updated_at, name, password, api_key, expires_at)
+INSERT INTO users (id, created_at, updated_at, name, password, api_key, api_key_expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, created_at, updated_at, name, password, api_key, expires_at
+RETURNING id, created_at, updated_at, name, password, api_key, api_key_expires_at
 `
 
 type CreateUserParams struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Password  string
-	ApiKey    string
-	ExpiresAt time.Time
+	ID              uuid.UUID
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Name            string
+	Password        string
+	ApiKey          string
+	ApiKeyExpiresAt time.Time
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -36,7 +36,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Name,
 		arg.Password,
 		arg.ApiKey,
-		arg.ExpiresAt,
+		arg.ApiKeyExpiresAt,
 	)
 	var i User
 	err := row.Scan(
@@ -46,18 +46,18 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Name,
 		&i.Password,
 		&i.ApiKey,
-		&i.ExpiresAt,
+		&i.ApiKeyExpiresAt,
 	)
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
+const getUserByID = `-- name: GetUserByID :one
 
-SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE api_key = $1
+SELECT id, created_at, updated_at, name, password, api_key, api_key_expires_at FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUser(ctx context.Context, apiKey string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, apiKey)
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -66,14 +66,14 @@ func (q *Queries) GetUser(ctx context.Context, apiKey string) (User, error) {
 		&i.Name,
 		&i.Password,
 		&i.ApiKey,
-		&i.ExpiresAt,
+		&i.ApiKeyExpiresAt,
 	)
 	return i, err
 }
 
 const getUserByName = `-- name: GetUserByName :one
 
-SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE name = $1
+SELECT id, created_at, updated_at, name, password, api_key, api_key_expires_at FROM users WHERE name = $1
 `
 
 func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) {
@@ -86,27 +86,25 @@ func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) 
 		&i.Name,
 		&i.Password,
 		&i.ApiKey,
-		&i.ExpiresAt,
+		&i.ApiKeyExpiresAt,
 	)
 	return i, err
 }
 
-const getuserByID = `-- name: GetuserByID :one
+const updateUserApiKey = `-- name: UpdateUserApiKey :exec
 
-SELECT id, created_at, updated_at, name, password, api_key, expires_at FROM users WHERE id = $1
+UPDATE users
+SET api_key = $1, api_key_expires_at = $2
+WHERE id = $3
 `
 
-func (q *Queries) GetuserByID(ctx context.Context, id uuid.UUID) (User, error) {
-	row := q.db.QueryRowContext(ctx, getuserByID, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Name,
-		&i.Password,
-		&i.ApiKey,
-		&i.ExpiresAt,
-	)
-	return i, err
+type UpdateUserApiKeyParams struct {
+	ApiKey          string
+	ApiKeyExpiresAt time.Time
+	ID              uuid.UUID
+}
+
+func (q *Queries) UpdateUserApiKey(ctx context.Context, arg UpdateUserApiKeyParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserApiKey, arg.ApiKey, arg.ApiKeyExpiresAt, arg.ID)
+	return err
 }

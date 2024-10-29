@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/STaninnat/capstone_project/internal/auth"
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -23,9 +24,14 @@ func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 			return
 		}
 
-		user, err := apicfg.DB.GetuserByID(r.Context(), claims.UserID)
+		user, err := apicfg.DB.GetUserByID(r.Context(), claims.UserID)
 		if err != nil {
 			respondWithError(w, http.StatusNotFound, "couldn't get user")
+			return
+		}
+
+		if user.ApiKeyExpiresAt.Before(time.Now().UTC()) {
+			respondWithError(w, http.StatusUnauthorized, "API key expired")
 			return
 		}
 
