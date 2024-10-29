@@ -21,7 +21,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	user, err := apicfg.DB.GetUserByRefreshToken(r.Context(), params.RefreshToken)
+	user, err := apicfg.DB.GetUserByRfKey(r.Context(), params.RefreshToken)
 	if err != nil || user.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "invalid or expired refresh token")
 		return
@@ -41,7 +41,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = apicfg.DB.UpdateUserApiKey(r.Context(), database.UpdateUserApiKeyParams{
+	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		ApiKey:          newHashedApiKey,
 		ApiKeyExpiresAt: newApiKeyExpiresAt,
 		ID:              user.UserID,
@@ -52,7 +52,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	}
 
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
-	_, err = apicfg.DB.UpdateUserRefreshToken(r.Context(), database.UpdateUserRefreshTokenParams{
+	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		RefreshToken:          params.RefreshToken,
 		RefreshTokenExpiresAt: newRefreshTokenExpiresAt,
 		UserID:                user.UserID,

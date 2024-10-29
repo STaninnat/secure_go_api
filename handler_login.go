@@ -51,7 +51,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingToken, err := apicfg.DB.GetRefreshTokenByUserID(r.Context(), user.ID)
+	existingToken, err := apicfg.DB.GetRfKeyByUserID(r.Context(), user.ID)
 	if err != nil && existingToken.RefreshTokenExpiresAt.After(time.Now()) {
 		respondWithJSON(w, http.StatusOK, map[string]interface{}{
 			"access_token":             tokenString,
@@ -71,14 +71,14 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = apicfg.DB.UpdateUserRefreshToken(r.Context(), database.UpdateUserRefreshTokenParams{
+	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshExpiresAtTime,
 		UserID:                user.ID,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			_, err = apicfg.DB.CreateUserRefreshToken(r.Context(), database.CreateUserRefreshTokenParams{
+			_, err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
 				ID:                    uuid.New(),
 				CreatedAt:             time.Now().UTC(),
 				AccessTokenExpiresAt:  jwtExpiresAtTime,

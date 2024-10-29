@@ -91,20 +91,20 @@ func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) 
 	return i, err
 }
 
-const updateUserApiKey = `-- name: UpdateUserApiKey :exec
+const updateUser = `-- name: UpdateUser :exec
 
 UPDATE users
 SET api_key = $1, api_key_expires_at = $2
 WHERE id = $3
 `
 
-type UpdateUserApiKeyParams struct {
+type UpdateUserParams struct {
 	ApiKey          string
 	ApiKeyExpiresAt time.Time
 	ID              uuid.UUID
 }
 
-func (q *Queries) UpdateUserApiKey(ctx context.Context, arg UpdateUserApiKeyParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserApiKey, arg.ApiKey, arg.ApiKeyExpiresAt, arg.ID)
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser, arg.ApiKey, arg.ApiKeyExpiresAt, arg.ID)
 	return err
 }

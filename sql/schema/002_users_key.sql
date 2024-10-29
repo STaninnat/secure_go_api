@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE 
-    users_token (
+    users_key (
         id UUID PRIMARY KEY,
         created_at TIMESTAMP NOT NULL,
         access_token_expires_at TIMESTAMP NOT NULL,

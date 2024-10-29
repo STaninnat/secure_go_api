@@ -28,7 +28,7 @@ type User struct {
 	ApiKeyExpiresAt time.Time
 }
 
-type UsersToken struct {
+type UsersKey struct {
 	ID                    uuid.UUID
 	CreatedAt             time.Time
 	AccessTokenExpiresAt  time.Time

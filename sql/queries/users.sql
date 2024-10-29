@@ -12,7 +12,7 @@ SELECT * FROM users WHERE name = $1;
 SELECT * FROM users WHERE id = $1;
 --
 
--- name: UpdateUserApiKey :exec
+-- name: UpdateUser :exec
 UPDATE users
 SET api_key = $1, api_key_expires_at = $2
 WHERE id = $3;
