@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -20,11 +21,22 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		Password string `json:"password"`
 	}
 
+	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
+		return
+	}
+
+	if params.Name == "" || params.Password == "" {
+		respondWithError(w, http.StatusBadRequest, "Invalid input")
+		return
+	}
+
+	if !isValidUserName(params.Name) {
+		respondWithError(w, http.StatusBadRequest, "invalid username format")
 		return
 	}
 
@@ -34,10 +46,6 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if params.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "please enter a password")
-		return
-	}
 	if len(params.Password) < 8 {
 		respondWithError(w, http.StatusBadRequest, "password must be least 8 ")
 		return
@@ -67,14 +75,12 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		ApiKeyExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
-		log.Println(err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't create user")
 		return
 	}
 
 	userResp, err := databaseUserToUser(user)
 	if err != nil {
-		log.Println(err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't convert user")
 		return
 	}
@@ -117,4 +123,12 @@ func generateRandomSHA256HASH() (string, error) {
 	hash := sha256.Sum256(randomBytes)
 	hashString := hex.EncodeToString(hash[:])
 	return hashString, nil
+}
+
+func isValidUserName(name string) bool {
+	var usernameRegex = `^[a-zA-Z0-9]+([-._]?[a-zA-Z0-9]+)*$`
+
+	re := regexp.MustCompile(usernameRegex)
+
+	return len(name) >= 3 && len(name) <= 30 && re.MatchString(name)
 }

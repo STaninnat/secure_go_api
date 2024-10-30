@@ -13,6 +13,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		RefreshToken string `json:"refresh_token"`
 	}
 
+	defer r.Body.Close()
 	params := refreshParams{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
@@ -27,7 +28,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, newHashedApiKey, err := generateAndHashAPIKey()
+	newApiKey, newHashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new apikey")
 		return
@@ -63,10 +64,13 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	}
 
 	userResp := map[string]interface{}{
+		"api_key":                  newApiKey,
+		"api_key_expires_at":       newApiKeyExpiresAt,
 		"access_token":             newAccessToken,
 		"access_token_expires_at":  newAccessTokenExpiresAt,
 		"refresh_token":            params.RefreshToken,
 		"refresh_token_expires_at": newRefreshTokenExpiresAt,
+		"user_id":                  user.UserID,
 	}
 
 	respondWithJSON(w, http.StatusOK, userResp)

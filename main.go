@@ -82,6 +82,7 @@ func main() {
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 
 		v1Router.Post("/login", apicfg.handlerLogin)
+		v1Router.Post("/logout", apicfg.middlewareAuth(apicfg.handlerLogout))
 
 		v1Router.Post("/refresh", apicfg.handlerRefreshKey)
 

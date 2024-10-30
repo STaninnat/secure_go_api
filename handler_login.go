@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -18,6 +17,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
+	defer r.Body.Close()
 	params := loginParams{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
@@ -87,22 +87,24 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 				UserID:                user.ID,
 			})
 			if err != nil {
-				log.Printf("error creating new refresh token: %v\n", err)
+				// log.Printf("error creating new refresh token: %v\n", err)
 				respondWithError(w, http.StatusInternalServerError, "failed to create new refresh token")
 				return
 			}
 		} else {
-			log.Printf("error updating refresh token: %v\n", err)
+			// log.Printf("error updating refresh token: %v\n", err)
 			respondWithError(w, http.StatusInternalServerError, "failed to update new refresh token")
 			return
 		}
 	}
 
-	respondWithJSON(w, http.StatusOK, map[string]interface{}{
+	userResp := map[string]interface{}{
 		"access_token":             tokenString,
 		"access_token_expires_at":  jwtExpiresAt,
 		"refresh_token":            refreshToken,
 		"refresh_token_expires_at": refreshExpiresAt,
 		"user_id":                  user.ID,
-	})
+	}
+
+	respondWithJSON(w, http.StatusOK, userResp)
 }
