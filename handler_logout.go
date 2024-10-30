@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -9,21 +8,8 @@ import (
 )
 
 func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, user database.User) {
-	type logoutParams struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	defer r.Body.Close()
-	param := logoutParams{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&param)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
-		return
-	}
-
-	userByRefreshKey, err := apicfg.DB.GetUserByRfKey(r.Context(), param.RefreshToken)
-	if err != nil || userByRefreshKey.UserID != user.ID {
+	existingToken, err := apicfg.DB.GetUserByRfKey(r.Context(), user.ID.String())
+	if err != nil || existingToken.RefreshTokenExpiresAt.Before(time.Now()) {
 		respondWithError(w, http.StatusUnauthorized, "invalid or mismatched refresh token")
 		return
 	}
@@ -33,7 +19,7 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		RefreshToken:          "",
 		RefreshTokenExpiresAt: newRefreshTokenExpiredAtTime,
-		UserID:                userByRefreshKey.UserID,
+		UserID:                existingToken.UserID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't logout")
