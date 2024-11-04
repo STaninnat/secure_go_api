@@ -8,28 +8,29 @@ import (
 )
 
 func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, user database.User) {
-	existingToken, err := apicfg.DB.GetUserByRfKey(r.Context(), user.ID.String())
-	if err != nil || existingToken.RefreshTokenExpiresAt.Before(time.Now()) {
-		respondWithError(w, http.StatusUnauthorized, "invalid or mismatched refresh token")
-		return
-	}
-
 	newRefreshTokenExpiredAt := time.Now().Add(-time.Hour).Unix()
 	newRefreshTokenExpiredAtTime := time.Unix(newRefreshTokenExpiredAt, 0)
-	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+	_, err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		RefreshToken:          "",
 		RefreshTokenExpiresAt: newRefreshTokenExpiredAtTime,
-		UserID:                existingToken.UserID,
+		UserID:                user.ID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't logout")
 		return
 	}
 
-	userResp := map[string]interface{}{
-		"message": "logged out successfully",
-		"action":  "remove access token from client",
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Expires:  time.Now().UTC().Add(-time.Hour),
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	resp := map[string]interface{}{
+		"message": "logged out sucessfully",
 	}
 
-	respondWithJSON(w, http.StatusOK, userResp)
+	respondWithJSON(w, http.StatusOK, resp)
 }

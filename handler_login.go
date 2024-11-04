@@ -53,13 +53,24 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	existingToken, err := apicfg.DB.GetRfKeyByUserID(r.Context(), user.ID)
 	if err != nil && existingToken.RefreshTokenExpiresAt.After(time.Now()) {
-		respondWithJSON(w, http.StatusOK, map[string]interface{}{
-			"access_token":             tokenString,
-			"access_token_expires_at":  jwtExpiresAtTime,
-			"refresh_token":            existingToken.RefreshToken,
-			"refresh_token_expires_at": existingToken.RefreshTokenExpiresAt,
-			"user_id":                  user.ID,
+		http.SetCookie(w, &http.Cookie{
+			Name:     "access_token",
+			Value:    tokenString,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/",
+			Expires:  jwtExpiresAtTime,
 		})
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    existingToken.RefreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/",
+			Expires:  existingToken.AccessTokenExpiresAt,
+		})
+
+		respondWithJSON(w, http.StatusOK, map[string]string{"message": "Login Successful"})
 		return
 	}
 
@@ -98,13 +109,22 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	userResp := map[string]interface{}{
-		"access_token":             tokenString,
-		"access_token_expires_at":  jwtExpiresAt,
-		"refresh_token":            refreshToken,
-		"refresh_token_expires_at": refreshExpiresAt,
-		"user_id":                  user.ID,
-	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokenString,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  jwtExpiresAtTime,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  refreshExpiresAtTime,
+	})
 
-	respondWithJSON(w, http.StatusOK, userResp)
+	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Login Successful"})
 }

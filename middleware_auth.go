@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/STaninnat/capstone_project/internal/auth"
 	"github.com/STaninnat/capstone_project/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -13,11 +12,12 @@ type authhandler func(http.ResponseWriter, *http.Request, database.User)
 
 func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := auth.GetToken(r.Header)
+		cookie, err := r.Cookie("access_token")
 		if err != nil {
-			respondWithError(w, http.StatusUnauthorized, "couldn't find token")
+			respondWithError(w, http.StatusUnauthorized, "couldn't find token in cookies")
 			return
 		}
+		tokenString := cookie.Value
 
 		claims, err := validateJWTToken(tokenString, apicfg.JWTSecret)
 		if err != nil {

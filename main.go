@@ -41,7 +41,15 @@ func main() {
 		log.Fatal("warning: JWT_SECRET environment variable is not set")
 	}
 
-	apicfg := apiConfig{}
+	refreshSecret := os.Getenv("REFRESH_SECRET")
+	if refreshSecret == "" {
+		log.Fatal("warning: REFRESH_SECRET environment variable is not set")
+	}
+
+	apicfg := apiConfig{
+		JWTSecret:     jwtSecret,
+		RefreshSecret: refreshSecret,
+	}
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {

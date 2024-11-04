@@ -28,13 +28,13 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newApiKey, newHashedApiKey, err := generateAndHashAPIKey()
+	_, newHashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new apikey")
 		return
 	}
-	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour)
 
+	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour)
 	newAccessTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 	newAccessToken, err := generateJWTToken(user.UserID, apicfg.JWTSecret, newAccessTokenExpiresAt)
 	if err != nil {
@@ -63,15 +63,25 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userResp := map[string]interface{}{
-		"api_key":                  newApiKey,
-		"api_key_expires_at":       newApiKeyExpiresAt,
-		"access_token":             newAccessToken,
-		"access_token_expires_at":  newAccessTokenExpiresAt,
-		"refresh_token":            params.RefreshToken,
-		"refresh_token_expires_at": newRefreshTokenExpiresAt,
-		"user_id":                  user.UserID,
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    newAccessToken,
+		Expires:  newAccessTokenExpiresAt,
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    params.RefreshToken,
+		Expires:  newAccessTokenExpiresAt,
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	resp := map[string]interface{}{
+		"message": "token refreshed successfully",
 	}
 
-	respondWithJSON(w, http.StatusOK, userResp)
+	respondWithJSON(w, http.StatusOK, resp)
 }

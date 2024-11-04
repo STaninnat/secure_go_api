@@ -1,6 +1,4 @@
 const API_BASE = '/v1';
-let currentUserAPIKey = null;
-let currentUserToken = null;
 
 function initLoginPage() {
     console.log("Initializing Login Page");
@@ -10,24 +8,21 @@ function initLoginPage() {
         const password = document.getElementById('passwordField').value.trim();
         
         if (!name || !password) {
-            alert("Please enter both username and password.");
+            alert("please enter both username and password");
             return;
         }
         
-        const response = await fetch(`${API_BASE}/login`, {
+        const response = await fetchWithAlert(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, password })
         });
 
         if (response.ok) {
-            const user = await response.json();
-            localStorage.setItem('currentUserToken', user.token);
-
             alert(`Login successful, welcome ${name}`);
             window.location.href = "post.html"; 
         } else {
-            alert("Login failed. Please check your credentials.");
+            alert("login failed. Please check your credentials");
         }
     }
 
@@ -42,27 +37,21 @@ function initCreateUserPage() {
         const password = document.getElementById('passwordField').value.trim();
         
         if (!name || !password) {
-            alert("Please enter both username and password.");
+            alert("please enter both username and password");
             return;
         }
         
-        const response = await fetch(`${API_BASE}/users`, {
+        const response = await fetchWithAlert(`${API_BASE}/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, password })
         });
 
         if (response.ok) {
-            const user = await response.json();
-
-            localStorage.setItem('currentUserAPIKey', user.api_key);
-            localStorage.setItem('currentUserToken', user.token);
-
             alert("User created successfully. Welcome!");
-
             window.location.href = "post.html";
         } else {
-            alert("User creation failed.");
+            alert("user creation failed");
         }
     }
 
@@ -72,17 +61,25 @@ function initCreateUserPage() {
 function initPostPage() {
     console.log("Initializing Post Page");
 
-    currentUserToken = localStorage.getItem('currentUserToken');
+    async function refreshToken() {
+        const response = await fetchWithAlert(`${API_BASE}/refresh`, {
+            method: 'POST',
+            credentials: 'include'
+        });
 
-    if (!currentUserToken) {
-        alert("Please log in first.");
-        window.location.href = "index.html";
-        return;
+        if (response.ok) {
+            console.log("Token refreshed successfully");
+            return true;
+        } else {
+            alert("failed to refresh token. please log in again");
+            window.location.href = "index.html";
+            return false;
+        }
     }
 
     async function loadPosts() {
-        const response = await fetch(`${API_BASE}/posts`, {
-            headers: { 'Authorization': `Bearer ${currentUserToken}` }
+        const response = await fetchWithAlert(`${API_BASE}/posts`, {
+            credentials: 'include'
         });
 
         if (response.ok) {
@@ -91,23 +88,23 @@ function initPostPage() {
             postsContainer.innerHTML = '';
             posts.forEach(post => displayPost(post));
         } else {
-        alert('Error loading posts');
-    }
+            alert('error loading posts');
+        }
     }
 
     async function createPost() {
         const postContent = document.getElementById('newPostContent').value;
 
         if (!postContent) {
-            alert('Please enter post content');
+            alert('please enter post content');
             return;
         }
 
-        const response = await fetch(`${API_BASE}/posts`, {
+        const response = await fetchWithAlert(`${API_BASE}/posts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentUserToken}`
+                credentials: 'include',
             },
             body: JSON.stringify({ post: postContent })
         });
@@ -117,7 +114,7 @@ function initPostPage() {
             displayPost(post);
             document.getElementById('newPostContent').value = '';
         } else {
-            alert("Failed to create post.");
+            alert("failed to create post");
         }
     }
 
@@ -128,47 +125,47 @@ function initPostPage() {
         document.getElementById('posts').appendChild(postElement);
     }
 
-    function logout() {
-        localStorage.removeItem('currentUserToken');
-        currentUserToken = null;
-        window.location.href = "index.html";
+    async function logout() {
+        const response = await fetchWithAlert(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            alert("Logged out successfully");
+            window.location.href = "index.html";
+        } else {
+            alert("failed to log out");
+        }
     }
 
     window.createPost = createPost;
     window.logout = logout;
-    loadPosts();
-}
-
-async function getUser() {
-    const response = await fetchWithAlert(`${API_BASE}/users`, {
-        headers: {
-                'Authorization': `Bearer ${currentUserToken}`
+    
+    refreshToken().then((refreshed) => {
+        if (refreshed) {
+            loadPosts();
         }
     });
 
-    if (!response) return null; 
-    return await response.json();
+    setInterval(refreshToken, 25 * 60 * 1000);
 }
 
-async function fetchWithAlert(url, options) {
-    const token = localStorage.getItem('currentUserToken');
-    if (token) {
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-        };
-    } else {
-        alert("Session expired. Please log in again.");
-        window.location.href = "index.html";
-        return;
-    }
+async function fetchWithAlert(url, options = {}) {
+    let response = await fetch(url, options);
 
-    const response = await fetch(url, options);
     if (response.status === 401) {
-        alert("Session expired. Please log in again.");
-        window.location.href = "index.html";
-        return;
+        const refreshSuccess = await refreshToken();
+
+        if (refreshSuccess) {
+            response = await fetch(url, options);
+        } else {
+            alert("session expired. please log in again");
+            window.location.href = "index.html";
+            return;
+        }
     }
+    
     if (response.status > 299) {
         alert(`Error: ${response.status}`);
         return;
@@ -177,8 +174,6 @@ async function fetchWithAlert(url, options) {
 }
 
 window.onload = function () {
-    currentUserToken = localStorage.getItem('currentUserToken');
-
     const path = window.location.pathname;
     if (path.includes('index.html')) {
         initLoginPage();
