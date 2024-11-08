@@ -59,10 +59,14 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			if err := tx.Rollback(); err != nil {
+				log.Printf("failed to rollback transaction: %v", err)
+			}
 			panic(p)
 		} else if err != nil {
-			tx.Rollback()
+			if err := tx.Rollback(); err != nil {
+				log.Printf("failed to rollback transaction: %v", err)
+			}
 		} else {
 			err = tx.Commit()
 		}
