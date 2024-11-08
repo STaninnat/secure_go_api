@@ -1,5 +1,29 @@
 const API_BASE = '/v1';
 
+async function fetchWithAlert(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        credentials: 'include'
+    });
+
+    if (response.status === 401) {
+        const refreshResponse = await refreshToken();
+        if (refreshResponse && refreshResponse.ok) {
+            return fetch(url, { ...options, credentials: 'include' });
+        } else {
+            alert("session expired. please log in again");
+            window.location.href = "/";
+            return;
+        }
+    }
+    
+    if (response.status > 299) {
+        alert(`Error: ${response.status}`);
+        return response;
+    }
+    return response;
+}
+
 function initLoginPage() {
     console.log("Initializing Login Page");
 
@@ -20,9 +44,9 @@ function initLoginPage() {
 
         if (response.ok) {
             alert(`Login successful, welcome ${name}`);
-            window.location.href = "post.html"; 
+            window.location.href = "/static/posts.html"; 
         } else {
-            alert("login failed. Please check your credentials");
+            alert("login failed. please check your credentials");
         }
     }
 
@@ -48,8 +72,8 @@ function initCreateUserPage() {
         });
 
         if (response.ok) {
-            alert("User created successfully. Welcome!");
-            window.location.href = "post.html";
+            alert("User created successfully. WELCOME!");
+            window.location.href = "posts.html";
         } else {
             alert("user creation failed");
         }
@@ -67,14 +91,14 @@ function initPostPage() {
             credentials: 'include'
         });
 
-        if (response.ok) {
+        if (response && response.ok) {
             console.log("Token refreshed successfully");
-            return true;
         } else {
             alert("failed to refresh token. please log in again");
-            window.location.href = "index.html";
-            return false;
+            window.location.href = "/";
         }
+        
+        return response;
     }
 
     async function loadPosts() {
@@ -104,8 +128,8 @@ function initPostPage() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                credentials: 'include',
             },
+            credentials: 'include',
             body: JSON.stringify({ post: postContent })
         });
 
@@ -133,7 +157,7 @@ function initPostPage() {
 
         if (response.ok) {
             alert("Logged out successfully");
-            window.location.href = "index.html";
+            window.location.href = "/";
         } else {
             alert("failed to log out");
         }
@@ -151,35 +175,14 @@ function initPostPage() {
     setInterval(refreshToken, 25 * 60 * 1000);
 }
 
-async function fetchWithAlert(url, options = {}) {
-    let response = await fetch(url, options);
-
-    if (response.status === 401) {
-        const refreshSuccess = await refreshToken();
-
-        if (refreshSuccess) {
-            response = await fetch(url, options);
-        } else {
-            alert("session expired. please log in again");
-            window.location.href = "index.html";
-            return;
-        }
-    }
-    
-    if (response.status > 299) {
-        alert(`Error: ${response.status}`);
-        return;
-    }
-    return response;
-}
-
 window.onload = function () {
     const path = window.location.pathname;
-    if (path.includes('index.html')) {
+    console.log("Current path:", path);
+    if (path === '/' || path.endsWith('/index.html')) {
         initLoginPage();
-    } else if (path.includes('create_user.html')) {
+    } else if (path.endsWith('/static/create_user.html')) {
         initCreateUserPage();
-    } else if (path.includes('post.html')) {
+    } else if (path.endsWith('/static/posts.html')) {
         initPostPage();
     }
 };

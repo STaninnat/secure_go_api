@@ -79,6 +79,52 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
+	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
+	tokenString, err := generateJWTToken(user.ID, apicfg.JWTSecret, jwtExpiresAtTime)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
+		return
+	}
+
+	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
+	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
+	refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
+		return
+	}
+
+	_, err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
+		ID:                    uuid.New(),
+		CreatedAt:             time.Now().UTC(),
+		AccessTokenExpiresAt:  jwtExpiresAtTime,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshExpiresAtTime,
+		UserID:                user.ID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create new refresh token")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokenString,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  jwtExpiresAtTime,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  refreshExpiresAtTime,
+	})
+
 	userResp, err := databaseUserToUser(user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't convert user")

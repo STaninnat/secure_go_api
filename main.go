@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -18,11 +19,12 @@ import (
 
 type apiConfig struct {
 	DB            *database.Queries
+	DBConn        *sql.DB
 	JWTSecret     string
 	RefreshSecret string
 }
 
-//go:embed static/*
+//go:embed index.html static/*
 var staticFiles embed.FS
 
 func main() {
@@ -62,6 +64,7 @@ func main() {
 		}
 		dbQueries := database.New(db)
 		apicfg.DB = dbQueries
+		apicfg.DBConn = db
 		log.Println("Connected to database!")
 	}
 
@@ -75,12 +78,30 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "static/index.html")
-		} else {
-			fileServer := http.FileServer(http.FS(staticFiles))
-			http.StripPrefix("/", fileServer).ServeHTTP(w, r)
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		f, err := staticFiles.Open("index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
+		filepath := r.URL.Path[len("/static/"):]
+		// fmt.Println("Requesting static file:", filepath)
+
+		f, err := staticFiles.Open("static/" + filepath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		defer f.Close()
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 

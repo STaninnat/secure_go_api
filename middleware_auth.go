@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -21,6 +22,7 @@ func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 
 		claims, err := validateJWTToken(tokenString, apicfg.JWTSecret)
 		if err != nil {
+			log.Printf("Token validation error: %v\n", err)
 			if err == jwt.ErrTokenExpired {
 				respondWithError(w, http.StatusUnauthorized, "token expired")
 				return

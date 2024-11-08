@@ -8,8 +8,9 @@ import (
 )
 
 func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, user database.User) {
-	newRefreshTokenExpiredAt := time.Now().Add(-time.Hour).Unix()
+	newRefreshTokenExpiredAt := time.Now().UTC().Add(-24 * time.Hour).Unix()
 	newRefreshTokenExpiredAtTime := time.Unix(newRefreshTokenExpiredAt, 0)
+
 	_, err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		RefreshToken:          "",
 		RefreshTokenExpiresAt: newRefreshTokenExpiredAtTime,

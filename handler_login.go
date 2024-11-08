@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -43,71 +44,92 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtExpiresAt := time.Now().Add(15 * time.Minute).Unix()
+	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
 	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
 	tokenString, err := generateJWTToken(user.ID, apicfg.JWTSecret, jwtExpiresAtTime)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "couldn't generate token")
+		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
 		return
 	}
 
-	existingToken, err := apicfg.DB.GetRfKeyByUserID(r.Context(), user.ID)
-	if err != nil && existingToken.RefreshTokenExpiresAt.After(time.Now()) {
-		http.SetCookie(w, &http.Cookie{
-			Name:     "access_token",
-			Value:    tokenString,
-			HttpOnly: true,
-			Secure:   true,
-			Path:     "/",
-			Expires:  jwtExpiresAtTime,
-		})
-		http.SetCookie(w, &http.Cookie{
-			Name:     "refresh_token",
-			Value:    existingToken.RefreshToken,
-			HttpOnly: true,
-			Secure:   true,
-			Path:     "/",
-			Expires:  existingToken.AccessTokenExpiresAt,
-		})
-
-		respondWithJSON(w, http.StatusOK, map[string]string{"message": "Login Successful"})
-		return
-	}
-
-	refreshExpiresAt := time.Now().Add(30 * 24 * time.Hour).Unix()
-	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
-	refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	tx, err := apicfg.DBConn.BeginTx(r.Context(), nil)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
+		respondWithError(w, http.StatusInternalServerError, "failed to start transaction")
 		return
 	}
-
-	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime,
-		UserID:                user.ID,
-	})
-	if err != nil {
-		if err == sql.ErrNoRows {
-			_, err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
-				ID:                    uuid.New(),
-				CreatedAt:             time.Now().UTC(),
-				AccessTokenExpiresAt:  jwtExpiresAtTime,
-				RefreshToken:          refreshToken,
-				RefreshTokenExpiresAt: refreshExpiresAtTime,
-				UserID:                user.ID,
-			})
-			if err != nil {
-				// log.Printf("error creating new refresh token: %v\n", err)
-				respondWithError(w, http.StatusInternalServerError, "failed to create new refresh token")
-				return
-			}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
 		} else {
-			// log.Printf("error updating refresh token: %v\n", err)
-			respondWithError(w, http.StatusInternalServerError, "failed to update new refresh token")
+			err = tx.Commit()
+		}
+	}()
+
+	queriesTx := database.New(tx)
+
+	existingToken, err := queriesTx.GetRfKeyByUserID(r.Context(), user.ID)
+	if err != nil && err != sql.ErrNoRows {
+		respondWithError(w, http.StatusInternalServerError, "couldn't retrieve refresh token")
+		return
+	}
+	if existingToken.RefreshToken == "" || existingToken.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
+		refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
+		refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
+		refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
 			return
 		}
+
+		updatedToken, err := queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+			RefreshToken:          refreshToken,
+			RefreshTokenExpiresAt: refreshExpiresAtTime,
+			UserID:                user.ID,
+		})
+		if err != nil {
+			if err == sql.ErrNoRows {
+				_, err = queriesTx.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
+					ID:                    uuid.New(),
+					CreatedAt:             time.Now().UTC(),
+					AccessTokenExpiresAt:  jwtExpiresAtTime,
+					RefreshToken:          refreshToken,
+					RefreshTokenExpiresAt: refreshExpiresAtTime,
+					UserID:                user.ID,
+				})
+				if err != nil {
+					respondWithError(w, http.StatusInternalServerError, "failed to create new refresh token")
+					return
+				}
+			} else {
+				respondWithError(w, http.StatusInternalServerError, "failed to update new refresh token")
+				return
+			}
+		}
+		log.Printf("Debug: Successfully updated refresh token for user ID %v: %+v", user.ID, updatedToken)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/",
+			Expires:  refreshExpiresAtTime,
+		})
+	} else {
+		refreshToken := existingToken.RefreshToken
+		refreshExpiresAtTime := existingToken.RefreshTokenExpiresAt
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/",
+			Expires:  refreshExpiresAtTime,
+		})
 	}
+	log.Printf("Debug: Generated access token for user ID %v: %s", user.ID, tokenString)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
@@ -116,14 +138,6 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Secure:   true,
 		Path:     "/",
 		Expires:  jwtExpiresAtTime,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		Expires:  refreshExpiresAtTime,
 	})
 
 	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Login Successful"})

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -9,20 +8,14 @@ import (
 )
 
 func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Request) {
-	type refreshParams struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	defer r.Body.Close()
-	params := refreshParams{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&params)
+	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
+		respondWithError(w, http.StatusUnauthorized, "couldn't find refresh token")
 		return
 	}
+	refreshToken := cookie.Value
 
-	user, err := apicfg.DB.GetUserByRfKey(r.Context(), params.RefreshToken)
+	user, err := apicfg.DB.GetUserByRfKey(r.Context(), refreshToken)
 	if err != nil || user.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "invalid or expired refresh token")
 		return
@@ -54,7 +47,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		RefreshToken:          params.RefreshToken,
+		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: newRefreshTokenExpiresAt,
 		UserID:                user.UserID,
 	})
@@ -73,7 +66,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    params.RefreshToken,
+		Value:    refreshToken,
 		Expires:  newAccessTokenExpiresAt,
 		HttpOnly: true,
 		Path:     "/",
