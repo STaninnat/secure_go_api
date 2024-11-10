@@ -1,15 +1,29 @@
 const API_BASE = '/v1';
 
 async function fetchWithAlert(url, options = {}) {
+    const token = sessionStorage.getItem('access_token');
+
     const response = await fetch(url, {
         ...options,
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+            ...options.headers,
+            'Authorization': token ? `Bearer ${token}` : ''
+        }
     });
 
     if (response.status === 401) {
         const refreshResponse = await refreshToken();
         if (refreshResponse && refreshResponse.ok) {
-            return fetch(url, { ...options, credentials: 'include' });
+            const newToken = sessionStorage.getItem('access_token');
+            return fetch(url, {
+                ...options,
+                credentials: 'include',
+                headers: {
+                    ...options.headers,
+                    'Authorization': newToken ? `Bearer ${newToken}` : ''
+                }
+            });
         } else {
             alert("session expired. please log in again");
             window.location.href = "/";
@@ -24,13 +38,37 @@ async function fetchWithAlert(url, options = {}) {
     return response;
 }
 
+async function refreshToken() {
+    const response = await fetchWithAlert(`${API_BASE}/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+    });
+
+    if (response && response.ok) {
+        const data = await response.json();
+        if (data.access_token) {
+            sessionStorage.setItem('access_token', data.access_token);
+            console.log("Token refreshed successfully");
+        } else {
+            alert("failed to refresh token. please log in again");
+            window.location.href = "/";
+        }
+    } else {
+        alert("failed to refresh token. please log in again");
+        window.location.href = "/";
+    }
+    return response;
+}
+
 function initLoginPage() {
     console.log("Initializing Login Page");
 
-    async function loginUser() {
-        const name = document.getElementById('nameField').value.trim();
-        const password = document.getElementById('passwordField').value.trim();
-        
+    async function loginUser(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('nameFieldLogin').value.trim();
+        const password = document.getElementById('passwordFieldLogin').value.trim();
+
         if (!name || !password) {
             alert("please enter both username and password");
             return;
@@ -43,10 +81,16 @@ function initLoginPage() {
         });
 
         if (response.ok) {
+            const data = await response.json();
+            sessionStorage.setItem('access_token', data.access_token);
             alert(`Login successful, welcome ${name}`);
-            window.location.href = "/static/posts.html"; 
+            window.location.href = "/static/posts.html";
         } else {
-            alert("login failed. please check your credentials");
+            if (response.status === 401) {
+                alert("Invalid username or password. Please try again.");
+            } else {
+                alert("Login failed. Please check your credentials.");
+            }
         }
     }
 
@@ -57,8 +101,8 @@ function initCreateUserPage() {
     console.log("Initializing Create User Page");
 
     async function createUser() {
-        const name = document.getElementById('nameField').value.trim();
-        const password = document.getElementById('passwordField').value.trim();
+        const name = document.getElementById('nameFieldCreate').value.trim();
+        const password = document.getElementById('passwordFieldCreate').value.trim();
         
         if (!name || !password) {
             alert("please enter both username and password");
@@ -72,8 +116,20 @@ function initCreateUserPage() {
         });
 
         if (response.ok) {
+            const data = await response.json();
             alert("User created successfully. WELCOME!");
-            window.location.href = "posts.html";
+            sessionStorage.setItem('access_token', data.access_token);
+            console.log("Access Token Stored:", data.access_token);
+            window.location.href = "/static/posts.html"; 
+            // if (data.access_token) {
+            //     alert("User created successfully. WELCOME!");
+            //     sessionStorage.setItem('access_token', data.access_token);
+            //     console.log("Access Token Stored:", data.access_token);
+            //     window.location.href = "/static/posts.html"; 
+            // } else {
+            //     alert("User creation successful, but no token received. Please log in.");
+            //     window.location.href = "/";
+            // }
         } else {
             alert("user creation failed");
         }
@@ -82,23 +138,13 @@ function initCreateUserPage() {
     window.createUser = createUser;
 }
 
-function initPostPage() {
+async function initPostPage() {
     console.log("Initializing Post Page");
 
-    async function refreshToken() {
-        const response = await fetchWithAlert(`${API_BASE}/refresh`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-
-        if (response && response.ok) {
-            console.log("Token refreshed successfully");
-        } else {
-            alert("failed to refresh token. please log in again");
-            window.location.href = "/";
-        }
-        
-        return response;
+    if (!sessionStorage.getItem('access_token')) {
+        alert("No access token found. Please log in.");
+        window.location.href = "/";
+        return;
     }
 
     async function loadPosts() {
@@ -157,6 +203,7 @@ function initPostPage() {
 
         if (response.ok) {
             alert("Logged out successfully");
+            sessionStorage.removeItem('access_token');
             window.location.href = "/";
         } else {
             alert("failed to log out");
@@ -165,22 +212,44 @@ function initPostPage() {
 
     window.createPost = createPost;
     window.logout = logout;
-    
-    refreshToken().then((refreshed) => {
-        if (refreshed) {
-            loadPosts();
+
+    const refreshed = await refreshToken();
+    if (refreshed && refreshed.ok) {
+        loadPosts();
+    }
+
+    setInterval(async () => {
+        const result = await refreshToken();
+        if (!result || !result.ok) {
+            console.log("Token refresh failed. Redirecting to login.");
+            alert("Session expired. Please log in again.");
+            window.location.href = "/";
         }
+    }, 25 * 60 * 1000);
+}
+
+function initContainer() {
+    console.log("Initializing Container");
+
+    const container = document.getElementById('container');
+    const registerBtn = document.getElementById('register');
+    const loginBtn = document.getElementById('login');
+
+    registerBtn.addEventListener('click', () => {
+        container.classList.add("active");
     });
 
-    setInterval(refreshToken, 25 * 60 * 1000);
+    loginBtn.addEventListener('click', () => {
+        container.classList.remove("active");
+    });
 }
 
 window.onload = function () {
     const path = window.location.pathname;
     console.log("Current path:", path);
     if (path === '/' || path.endsWith('/index.html')) {
+        initContainer();
         initLoginPage();
-    } else if (path.endsWith('/static/create_user.html')) {
         initCreateUserPage();
     } else if (path.endsWith('/static/posts.html')) {
         initPostPage();

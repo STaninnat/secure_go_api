@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -29,13 +30,17 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := apicfg.DB.GetUserByName(r.Context(), params.Name)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid credentials")
+		if err == sql.ErrNoRows {
+			respondWithError(w, http.StatusUnauthorized, "username not found")
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "error retrieving user")
+		}
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid credentials")
+		respondWithError(w, http.StatusUnauthorized, "incorrect password")
 		return
 	}
 
@@ -79,7 +84,10 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "couldn't retrieve refresh token")
 		return
 	}
-	if existingToken.RefreshToken == "" || existingToken.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
+
+	prefixExpiredRefreshToken := strings.HasPrefix(existingToken.RefreshToken, "expired-")
+
+	if prefixExpiredRefreshToken || existingToken.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
 		refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 		refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
 		refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
@@ -88,7 +96,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		updatedToken, err := queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		_, err = queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 			RefreshToken:          refreshToken,
 			RefreshTokenExpiresAt: refreshExpiresAtTime,
 			UserID:                user.ID,
@@ -112,7 +120,6 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		log.Printf("Debug: Successfully updated refresh token for user ID %v: %+v", user.ID, updatedToken)
 		http.SetCookie(w, &http.Cookie{
 			Name:     "refresh_token",
 			Value:    refreshToken,
@@ -120,6 +127,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			Secure:   true,
 			Path:     "/",
 			Expires:  refreshExpiresAtTime,
+			SameSite: http.SameSiteLaxMode,
 		})
 	} else {
 		refreshToken := existingToken.RefreshToken
@@ -131,18 +139,14 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			Secure:   true,
 			Path:     "/",
 			Expires:  refreshExpiresAtTime,
+			SameSite: http.SameSiteLaxMode,
 		})
 	}
-	log.Printf("Debug: Generated access token for user ID %v: %s", user.ID, tokenString)
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    tokenString,
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		Expires:  jwtExpiresAtTime,
-	})
+	userResp := map[string]string{
+		"access_token": tokenString,
+		"message":      "Login Successful",
+	}
 
-	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Login Successful"})
+	respondWithJSON(w, http.StatusOK, userResp)
 }

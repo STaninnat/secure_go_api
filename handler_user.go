@@ -47,7 +47,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	if len(params.Password) < 8 {
-		respondWithError(w, http.StatusBadRequest, "password must be least 8 ")
+		respondWithError(w, http.StatusBadRequest, "password must be at least 8 ")
 		return
 	}
 
@@ -57,7 +57,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	apiKey, hashedApiKey, err := generateAndHashAPIKey()
+	_, hashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate apikey")
 		return
@@ -109,29 +109,19 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    tokenString,
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		Expires:  jwtExpiresAtTime,
-	})
-	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
 		Expires:  refreshExpiresAtTime,
+		SameSite: http.SameSiteLaxMode,
 	})
 
-	userResp, err := databaseUserToUser(user)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "couldn't convert user")
-		return
+	userResp := map[string]string{
+		"access_token": tokenString,
+		"message":      "User created successfully",
 	}
-
-	userResp.ApiKey = apiKey
 
 	respondWithJSON(w, http.StatusCreated, userResp)
 }

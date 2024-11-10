@@ -5,15 +5,18 @@ import (
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
+	"github.com/google/uuid"
 )
 
 func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, user database.User) {
-	newRefreshTokenExpiredAt := time.Now().UTC().Add(-24 * time.Hour).Unix()
-	newRefreshTokenExpiredAtTime := time.Unix(newRefreshTokenExpiredAt, 0)
+	newTokenExpiredAt := time.Now().UTC().Add(-24 * time.Hour).Unix()
+	newTokenExpiredAtTime := time.Unix(newTokenExpiredAt, 0)
+
+	newExpiredToken := "expired-" + uuid.New().String()[:28]
 
 	_, err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		RefreshToken:          "",
-		RefreshTokenExpiresAt: newRefreshTokenExpiredAtTime,
+		RefreshToken:          newExpiredToken,
+		RefreshTokenExpiresAt: newTokenExpiredAtTime,
 		UserID:                user.ID,
 	})
 	if err != nil {
@@ -22,15 +25,19 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
+		Name:     "refresh_token",
 		Value:    "",
-		Expires:  time.Now().UTC().Add(-time.Hour),
+		Expires:  newTokenExpiredAtTime,
+		MaxAge:   -1,
 		HttpOnly: true,
 		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	resp := map[string]interface{}{
-		"message": "logged out sucessfully",
+		"access_token": "",
+		"message":      "logged out sucessfully",
 	}
 
 	respondWithJSON(w, http.StatusOK, resp)

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -85,6 +86,7 @@ func main() {
 			return
 		}
 		defer f.Close()
+		w.Header().Set("Content-Type", "text/html")
 		if _, err := io.Copy(w, f); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -92,7 +94,6 @@ func main() {
 
 	router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		filepath := r.URL.Path[len("/static/"):]
-		// fmt.Println("Requesting static file:", filepath)
 
 		f, err := staticFiles.Open("static/" + filepath)
 		if err != nil {
@@ -100,6 +101,19 @@ func main() {
 			return
 		}
 		defer f.Close()
+
+		if strings.HasSuffix(filepath, ".css") {
+			w.Header().Set("Content-Type", "text/css")
+		} else if strings.HasSuffix(filepath, ".js") {
+			w.Header().Set("Content-Type", "application/javascript")
+		} else if strings.HasSuffix(filepath, ".html") {
+			w.Header().Set("Content-Type", "text/html")
+		} else if strings.HasSuffix(filepath, ".json") {
+			w.Header().Set("Content-Type", "application/json")
+		} else {
+			w.Header().Set("Content-Type", "text/plain")
+		}
+
 		if _, err := io.Copy(w, f); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
