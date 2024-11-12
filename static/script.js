@@ -1,4 +1,5 @@
 const API_BASE = '/v1';
+let refreshInterval;
 
 async function fetchWithAlert(url, options = {}) {
     const token = sessionStorage.getItem('access_token');
@@ -8,20 +9,18 @@ async function fetchWithAlert(url, options = {}) {
         credentials: 'include',
         headers: {
             ...options.headers,
-            'Authorization': token ? `Bearer ${token}` : ''
         }
     });
 
     if (response.status === 401) {
+        alert("Session expired, trying to refresh token...");
         const refreshResponse = await refreshToken();
         if (refreshResponse && refreshResponse.ok) {
-            const newToken = sessionStorage.getItem('access_token');
             return fetch(url, {
                 ...options,
                 credentials: 'include',
                 headers: {
                     ...options.headers,
-                    'Authorization': newToken ? `Bearer ${newToken}` : ''
                 }
             });
         } else {
@@ -39,55 +38,69 @@ async function fetchWithAlert(url, options = {}) {
 }
 
 async function refreshToken() {
-    const response = await fetchWithAlert(`${API_BASE}/refresh`, {
-        method: 'POST',
-        credentials: 'include'
-    });
+    try {
+        const response = await fetch(`${API_BASE}/refresh`, {
+            method: 'POST',
+            credentials: 'include'
+        });
 
-    if (response && response.ok) {
-        const data = await response.json();
-        if (data.access_token) {
-            sessionStorage.setItem('access_token', data.access_token);
-            console.log("Token refreshed successfully");
-        } else {
-            alert("failed to refresh token. please log in again");
+        if (!response.ok) {
+            console.error(`Error: ${response.status} ${response.statusText}`);
+            if (response.status === 500) {
+                alert("Server error while refreshing token. Please check your connection and try again.");
+            } else {
+                alert("Failed to refresh token. Please log in again.");
+            }
             window.location.href = "/";
+            return { ok: false, message: 'Failed to refresh token' };
         }
-    } else {
-        alert("failed to refresh token. please log in again");
+
+        return response;
+    } catch (error) {
+        console.error('Error during token refresh:', error);
+        alert("An error occurred while refreshing the token. Please log in again.");
         window.location.href = "/";
+        return { ok: false, message: 'An error occurred while refreshing the token' };
     }
-    return response;
 }
 
 function initLoginPage() {
     console.log("Initializing Login Page");
 
     async function loginUser(event) {
-        event.preventDefault();
+        if (event) event.preventDefault();
 
         const name = document.getElementById('nameFieldLogin').value.trim();
         const password = document.getElementById('passwordFieldLogin').value.trim();
 
-        if (!name || !password) {
+        if (!name && !password) {
             alert("please enter both username and password");
             return;
+        } else if (!name) {
+            alert("please enter username");
+            return;
+        } else if (!password) {
+            alert("please enter password");
+            return;
         }
-        
+
         const response = await fetchWithAlert(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, password })
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            sessionStorage.setItem('access_token', data.access_token);
+        if (response && response.ok) {
             alert(`Login successful, welcome ${name}`);
             window.location.href = "/static/posts.html";
         } else {
-            if (response.status === 401) {
-                alert("Invalid username or password. Please try again.");
+            const errorData = await response.json();
+            console.log("Login failed: ", errorData.error);
+
+            if ((response.status === 400) && (errorData.error === "username not found")) {
+                alert("Invalid username. Please try again.");
+            } else if ((response.status === 400) && (errorData.error === "incorrect password")) {
+                alert("Invalid password. Please try again.");
             } else {
                 alert("Login failed. Please check your credentials.");
             }
@@ -100,38 +113,39 @@ function initLoginPage() {
 function initCreateUserPage() {
     console.log("Initializing Create User Page");
 
-    async function createUser() {
+    async function createUser(event) {
+        if (event) event.preventDefault();
+
         const name = document.getElementById('nameFieldCreate').value.trim();
         const password = document.getElementById('passwordFieldCreate').value.trim();
         
-        if (!name || !password) {
+        if (!name && !password) {
             alert("please enter both username and password");
+            return;
+        } else if (!name) {
+            alert("please enter username");
+            return;
+        } else if (!password) {
+            alert("please enter password");
             return;
         }
         
-        const response = await fetchWithAlert(`${API_BASE}/users`, {
+        const response = await fetch(`${API_BASE}/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, password })
         });
 
         if (response.ok) {
-            const data = await response.json();
             alert("User created successfully. WELCOME!");
-            sessionStorage.setItem('access_token', data.access_token);
-            console.log("Access Token Stored:", data.access_token);
-            window.location.href = "/static/posts.html"; 
-            // if (data.access_token) {
-            //     alert("User created successfully. WELCOME!");
-            //     sessionStorage.setItem('access_token', data.access_token);
-            //     console.log("Access Token Stored:", data.access_token);
-            //     window.location.href = "/static/posts.html"; 
-            // } else {
-            //     alert("User creation successful, but no token received. Please log in.");
-            //     window.location.href = "/";
-            // }
+            window.location.href = "/static/posts.html";
         } else {
-            alert("user creation failed");
+            const errorData = await response.json();
+            if ((response.status === 400) && (errorData.error === "username already exists")) {
+                alert("Username already exists. Please try again.");
+            } else {
+                alert("user creation failed");
+            }
         }
     }
 
@@ -141,14 +155,9 @@ function initCreateUserPage() {
 async function initPostPage() {
     console.log("Initializing Post Page");
 
-    if (!sessionStorage.getItem('access_token')) {
-        alert("No access token found. Please log in.");
-        window.location.href = "/";
-        return;
-    }
-
     async function loadPosts() {
         const response = await fetchWithAlert(`${API_BASE}/posts`, {
+            method: 'GET',
             credentials: 'include'
         });
 
@@ -203,7 +212,7 @@ async function initPostPage() {
 
         if (response.ok) {
             alert("Logged out successfully");
-            sessionStorage.removeItem('access_token');
+            clearInterval(refreshInterval);
             window.location.href = "/";
         } else {
             alert("failed to log out");
@@ -213,19 +222,28 @@ async function initPostPage() {
     window.createPost = createPost;
     window.logout = logout;
 
-    const refreshed = await refreshToken();
-    if (refreshed && refreshed.ok) {
-        loadPosts();
-    }
+    // const refreshed = await refreshToken();
+    // if (refreshed && refreshed.ok) {
+    //     loadPosts();
+    //     console.log("loadPosts()");
+    // }
+    loadPosts();
+    console.log("loadPosts()");
 
-    setInterval(async () => {
-        const result = await refreshToken();
-        if (!result || !result.ok) {
-            console.log("Token refresh failed. Redirecting to login.");
-            alert("Session expired. Please log in again.");
-            window.location.href = "/";
+    refreshInterval = setInterval(async () => {
+        try {
+            const result = await refreshToken();
+            if (!result || !result.ok) {
+                console.log("Token refresh failed. Redirecting to login.");
+                alert("Session expired. Please log in again.");
+                window.location.href = "/";
+            }
+            console.log("refresh token successfully.")
+        } catch (error) {
+            console.error("Error refreshing token:", error);
+            alert("Error refreshing session. Please check your connection.");
         }
-    }, 25 * 60 * 1000);
+    }, 10 * 60 * 1000);
 }
 
 function initContainer() {

@@ -75,6 +75,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		ApiKeyExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
+		log.Println("couldn't create user: ", err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't create user")
 		return
 	}
@@ -109,18 +110,29 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokenString,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  jwtExpiresAtTime,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
 		Expires:  refreshExpiresAtTime,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
 	})
 
 	userResp := map[string]string{
-		"access_token": tokenString,
-		"message":      "User created successfully",
+		"message": "User created successfully",
 	}
 
 	respondWithJSON(w, http.StatusCreated, userResp)

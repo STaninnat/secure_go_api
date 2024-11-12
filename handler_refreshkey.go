@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -51,6 +52,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
 	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
 		UserID:                user.UserID,
@@ -61,19 +63,41 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	}
 
 	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    newAccessToken,
+		Expires:  newAccessTokenExpiresAtTime,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		Expires:  newRefreshTokenExpiresAtTime,
 		HttpOnly: true,
 		Path:     "/",
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
 	})
 
-	resp := map[string]interface{}{
-		"access_token": newAccessToken,
-		"message":      "token refreshed successfully",
+	userResp := map[string]interface{}{
+		"message": "token refreshed successfully",
 	}
 
-	respondWithJSON(w, http.StatusOK, resp)
+	fmt.Printf("Refresh Session, AccessToken: %v\n", newAccessToken)
+	fmt.Printf("Refresh Session: AccessTokenExpiredTime: %v\n", newAccessTokenExpiresAtTime)
+	fmt.Println("-------------------------------------------------------------------------------------------")
+	fmt.Printf("Update Params: %+v\n", database.UpdateUserRfKeyParams{
+		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
+		UserID:                user.ID,
+	})
+	fmt.Println("============================================================================================")
+
+	respondWithJSON(w, http.StatusOK, userResp)
 }
