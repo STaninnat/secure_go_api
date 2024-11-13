@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -87,17 +86,6 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	userResp := map[string]interface{}{
 		"message": "token refreshed successfully",
 	}
-
-	fmt.Printf("Refresh Session, AccessToken: %v\n", newAccessToken)
-	fmt.Printf("Refresh Session: AccessTokenExpiredTime: %v\n", newAccessTokenExpiresAtTime)
-	fmt.Println("-------------------------------------------------------------------------------------------")
-	fmt.Printf("Update Params: %+v\n", database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
-		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
-		UserID:                user.ID,
-	})
-	fmt.Println("============================================================================================")
 
 	respondWithJSON(w, http.StatusOK, userResp)
 }

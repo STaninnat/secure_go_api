@@ -7,7 +7,7 @@
     font-family: 'Inter', sans-serif;
 }
 
-body {
+.indexSection {
     background-color: hsl(249, 100%, 89%);
     background: linear-gradient(to right, hsl(0, 0%, 89%), hsl(249, 100%, 89%));
     display: flex;
@@ -15,6 +15,15 @@ body {
     justify-content: center;
     flex-direction: column;
     height: 100vh;
+}
+
+.postSection {
+    background-color: hsl(249, 100%, 89%);
+    background: linear-gradient(to right, hsl(0, 0%, 89%), hsl(249, 100%, 89%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .container {
@@ -207,4 +216,156 @@ body {
 
 .container.active .toggle-right {
     transform: translateX(200%);
+}
+
+#alertCreate,
+#alertLogin,
+#alertPost {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: red;
+}
+
+nav {
+    background-color: hsl(270, 75%, 34%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    color: #fff;
+    width: 100%;
+    padding: 40px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+}
+
+nav h1 {
+    color: hsl(264, 100%, 98%);
+    font-size: 32px;
+    border-radius: 8px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+nav button {
+    background-color: hsl(271, 91%, 9%);
+    color: hsl(264, 100%, 98%);
+    font-size: 16px;
+    position: absolute;
+    right: 40px;
+    padding: 10px 30px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+nav button:hover {
+    background-color: hsla(271, 91%, 9%, 0.747);
+    color: hsla(264, 100%, 98%, 0.747);
+    transform: scale(1.05);
+}
+
+.postContainer {
+    width: 80%;
+    margin: 20px auto;
+    max-width: 80%;
+    padding: 20px;
+    border: 10px solid transparent;
+    border-radius: 10px;
+    background-color: hsl(264, 100%, 98%);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+#greetingMessage {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.postContainer textarea {
+    width: 70%;
+    margin-top: 20px;
+    height: 100px;
+    padding: 10px;
+    border: 5px solid hsla(270, 75%, 34%, 0.9);
+    border-radius: 4px;
+    font-size: 16px;
+    resize: none;
+}
+
+.postContainer button {
+    background-color: hsl(271, 91%, 21%, 0.9);
+    color: hsl(264, 100%, 98%);
+    margin-top: 30px;
+    padding: 10px 30px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.postContainer button:hover {
+    background-color: hsl(271, 91%, 21%, 0.85);
+    color: hsla(264, 100%, 98%, 0.85);
+}
+
+.postContainer h2 {
+    margin-top: 50px;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.no-posts-message {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: hsl(0, 0%, 53%);
+}
+
+#posts {
+    margin-top: 10px;
+    align-items: center;
+    width: 80%;
+    max-width: 80%;
+}
+
+.post {
+    background-color: hsl(0, 0%, 100%);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+    padding: 50px 30px;
+    margin: 0 auto;
+    margin-bottom: 15px;
+    border: 1px solid hsl(0, 0%, 87%);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.post:hover {
+    transform: scale(1.01);
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -143,17 +142,6 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	userResp := map[string]string{
 		"message": "Login Successful",
 	}
-
-	fmt.Printf("Login Session, AccessToken: %v\n", tokenString)
-	fmt.Printf("Login Session: AccessTokenExpiredTime: %v\n", jwtExpiresAtTime)
-	fmt.Println("-------------------------------------------------------------------------------------------")
-	fmt.Printf("Update Params: %+v\n", database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  jwtExpiresAtTime,
-		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime,
-		UserID:                user.ID,
-	})
-	fmt.Println("============================================================================================")
 
 	respondWithJSON(w, http.StatusOK, userResp)
 }

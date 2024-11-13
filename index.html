@@ -9,7 +9,7 @@
     <title>Capstone</title>
 </head>
 
-<body>
+<body class="indexSection">
     <div class="container" id="container">
         <div class="form-container sign-up">
             <form>
@@ -23,6 +23,7 @@
                 <span>or use your username for registeration</span>
                 <input type="text" id="nameFieldCreate" placeholder="Name">
                 <input type="password" id="passwordFieldCreate" placeholder="Password">
+                <p id="alertCreate"></p>
                 <button id="createUserButton" onclick="createUser(event)">Sign Up</button>
             </form>
         </div>
@@ -39,6 +40,7 @@
                 <input type="text" id="nameFieldLogin" placeholder="Name">
                 <input type="password" id="passwordFieldLogin" placeholder="Password">
                 <a href="#">Forget Your Password?</a>
+                <p id="alertLogin"></p>
                 <button id="loginButton" onclick="loginUser(event)">Sign In</button>
             </form>
         </div>
