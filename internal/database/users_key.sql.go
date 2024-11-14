@@ -84,12 +84,13 @@ func (q *Queries) GetUserByRfKey(ctx context.Context, refreshToken string) (User
 const updateUserRfKey = `-- name: UpdateUserRfKey :one
 
 UPDATE users_key
-SET refresh_token = $1, refresh_token_expires_at = $2
-WHERE user_id = $3
+SET access_token_expires_at = $1, refresh_token = $2, refresh_token_expires_at = $3
+WHERE user_id = $4
 RETURNING id, refresh_token
 `
 
 type UpdateUserRfKeyParams struct {
+	AccessTokenExpiresAt  time.Time
 	RefreshToken          string
 	RefreshTokenExpiresAt time.Time
 	UserID                uuid.UUID
@@ -101,7 +102,12 @@ type UpdateUserRfKeyRow struct {
 }
 
 func (q *Queries) UpdateUserRfKey(ctx context.Context, arg UpdateUserRfKeyParams) (UpdateUserRfKeyRow, error) {
-	row := q.db.QueryRowContext(ctx, updateUserRfKey, arg.RefreshToken, arg.RefreshTokenExpiresAt, arg.UserID)
+	row := q.db.QueryRowContext(ctx, updateUserRfKey,
+		arg.AccessTokenExpiresAt,
+		arg.RefreshToken,
+		arg.RefreshTokenExpiresAt,
+		arg.UserID,
+	)
 	var i UpdateUserRfKeyRow
 	err := row.Scan(&i.ID, &i.RefreshToken)
 	return i, err

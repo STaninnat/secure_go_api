@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -9,19 +8,14 @@ import (
 )
 
 func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Request) {
-	type refreshParams struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	params := refreshParams{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&params)
+	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
+		respondWithError(w, http.StatusUnauthorized, "couldn't find refresh token")
 		return
 	}
+	refreshToken := cookie.Value
 
-	user, err := apicfg.DB.GetUserByRfKey(r.Context(), params.RefreshToken)
+	user, err := apicfg.DB.GetUserByRfKey(r.Context(), refreshToken)
 	if err != nil || user.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "invalid or expired refresh token")
 		return
@@ -32,10 +26,13 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new apikey")
 		return
 	}
-	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour)
 
-	newAccessTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
-	newAccessToken, err := generateJWTToken(user.UserID, apicfg.JWTSecret, newAccessTokenExpiresAt)
+	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour).Unix()
+	newApiKeyExpiresAtTime := time.Unix(newApiKeyExpiresAt, 0)
+
+	newAccessTokenExpiresAt := time.Now().UTC().Add(1 * time.Hour).Unix()
+	newAccessTokenExpiresAtTime := time.Unix(newAccessTokenExpiresAt, 0)
+	newAccessToken, err := generateJWTToken(user.UserID, apicfg.JWTSecret, newAccessTokenExpiresAtTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new access token")
 		return
@@ -43,7 +40,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		ApiKey:          newHashedApiKey,
-		ApiKeyExpiresAt: newApiKeyExpiresAt,
+		ApiKeyExpiresAt: newApiKeyExpiresAtTime,
 		ID:              user.UserID,
 	})
 	if err != nil {
@@ -51,10 +48,12 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
+	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
+	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
 	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		RefreshToken:          params.RefreshToken,
-		RefreshTokenExpiresAt: newRefreshTokenExpiresAt,
+		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
 		UserID:                user.UserID,
 	})
 	if err != nil {
@@ -62,11 +61,30 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    newAccessToken,
+		Expires:  newAccessTokenExpiresAtTime,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  newRefreshTokenExpiresAtTime,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
 	userResp := map[string]interface{}{
-		"access_token":             newAccessToken,
-		"access_token_expires_at":  newAccessTokenExpiresAt,
-		"refresh_token":            params.RefreshToken,
-		"refresh_token_expires_at": newRefreshTokenExpiresAt,
+		"message": "token refreshed successfully",
 	}
 
 	respondWithJSON(w, http.StatusOK, userResp)

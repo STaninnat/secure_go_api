@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -20,11 +21,22 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		Password string `json:"password"`
 	}
 
+	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters")
+		return
+	}
+
+	if params.Name == "" || params.Password == "" {
+		respondWithError(w, http.StatusBadRequest, "Invalid input")
+		return
+	}
+
+	if !isValidUserName(params.Name) {
+		respondWithError(w, http.StatusBadRequest, "invalid username format")
 		return
 	}
 
@@ -34,12 +46,8 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if params.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "please enter a password")
-		return
-	}
 	if len(params.Password) < 8 {
-		respondWithError(w, http.StatusBadRequest, "password must be least 8 ")
+		respondWithError(w, http.StatusBadRequest, "password must be at least 8 ")
 		return
 	}
 
@@ -49,7 +57,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	apiKey, hashedApiKey, err := generateAndHashAPIKey()
+	_, hashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate apikey")
 		return
@@ -67,19 +75,65 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		ApiKeyExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
-		log.Println(err)
+		log.Println("couldn't create user: ", err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't create user")
 		return
 	}
 
-	userResp, err := databaseUserToUser(user)
+	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
+	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
+	tokenString, err := generateJWTToken(user.ID, apicfg.JWTSecret, jwtExpiresAtTime)
 	if err != nil {
-		log.Println(err)
-		respondWithError(w, http.StatusInternalServerError, "couldn't convert user")
+		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
 		return
 	}
 
-	userResp.ApiKey = apiKey
+	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
+	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
+	refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
+		return
+	}
+
+	_, err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
+		ID:                    uuid.New(),
+		CreatedAt:             time.Now().UTC(),
+		AccessTokenExpiresAt:  jwtExpiresAtTime,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshExpiresAtTime,
+		UserID:                user.ID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to create new refresh token")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokenString,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  jwtExpiresAtTime,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  refreshExpiresAtTime,
+		SameSite: http.SameSiteStrictMode,
+		// SameSite: http.SameSiteLaxMode,
+	})
+
+	userResp := map[string]string{
+		"message": "User created successfully",
+	}
 
 	respondWithJSON(w, http.StatusCreated, userResp)
 }
@@ -117,4 +171,12 @@ func generateRandomSHA256HASH() (string, error) {
 	hash := sha256.Sum256(randomBytes)
 	hashString := hex.EncodeToString(hash[:])
 	return hashString, nil
+}
+
+func isValidUserName(name string) bool {
+	var usernameRegex = `^[a-zA-Z0-9]+([-._]?[a-zA-Z0-9]+)*$`
+
+	re := regexp.MustCompile(usernameRegex)
+
+	return len(name) >= 3 && len(name) <= 30 && re.MatchString(name)
 }

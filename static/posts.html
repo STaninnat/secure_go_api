@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <title>Post Section</title>
 </head>
-<body>
-    <div id="postContainer" class="section">
-        <p id="greetingMessage">Welcome to your posts!</p>
+<body class="postSection">
+    <nav>
+        <h1>Welcome to Capstone</h1>
+        <button onclick="logout()">Logout</button>
+    </nav>
     
-        <textarea id="newPostContent"></textarea>
+    <div class="postContainer" id="postContainer">
+        <p id="greetingMessage"></p>
+    
+        <textarea id="newPostContent" placeholder="What's happening?..."></textarea>
+        <p id="alertPost"></p>
         <button id="createPostButton" onclick="createPost()">Create Post</button>
     
-        <h2>Your Posts</h2>
+        <h2>Your Shared Thoughts</h2>
         <div id="posts"></div>
-    
-        <button onclick="logout()">Logout</button>
     </div>
     
     <script src="script.js"></script>

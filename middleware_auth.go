@@ -1,40 +1,50 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 
-	"github.com/STaninnat/capstone_project/internal/auth"
 	"github.com/STaninnat/capstone_project/internal/database"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type authhandler func(http.ResponseWriter, *http.Request, database.User)
 
 func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := auth.GetToken(r.Header)
+		tokenString, err := r.Cookie("access_token")
 		if err != nil {
-			respondWithError(w, http.StatusUnauthorized, "couldn't find token")
+			respondWithError(w, http.StatusUnauthorized, "Couldn't find token")
 			return
 		}
 
-		claims, err := validateJWTToken(tokenString, apicfg.JWTSecret)
+		claims, err := validateJWTToken(tokenString.Value, apicfg.JWTSecret)
 		if err != nil {
+			log.Printf("Token validation error: %v\n", err)
+			if err == jwt.ErrTokenExpired {
+				respondWithError(w, http.StatusUnauthorized, "token expired")
+				return
+			}
 			respondWithError(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
 
 		user, err := apicfg.DB.GetUserByID(r.Context(), claims.UserID)
 		if err != nil {
-			respondWithError(w, http.StatusNotFound, "couldn't get user")
+			respondWithError(w, http.StatusInternalServerError, "couldn't get user")
 			return
 		}
 
-		if user.ApiKeyExpiresAt.Before(time.Now().UTC()) {
-			respondWithError(w, http.StatusUnauthorized, "API key expired")
+		if isAPIKeyExpired(user) {
+			respondWithError(w, http.StatusUnauthorized, "api key expired")
 			return
 		}
 
 		handler(w, r, user)
 	}
+}
+
+func isAPIKeyExpired(user database.User) bool {
+	return user.ApiKeyExpiresAt.Before(time.Now().UTC())
 }

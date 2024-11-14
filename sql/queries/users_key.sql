@@ -6,8 +6,8 @@ RETURNING id;
 
 -- name: UpdateUserRfKey :one
 UPDATE users_key
-SET refresh_token = $1, refresh_token_expires_at = $2
-WHERE user_id = $3
+SET access_token_expires_at = $1, refresh_token = $2, refresh_token_expires_at = $3
+WHERE user_id = $4
 RETURNING id, refresh_token;
 --
 

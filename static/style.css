@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+    --8px: 0.5rem;
+    --12px: 0.75rem;
+    --16px: 1rem;
+    --24px: 1.5rem;
+    --32px: 2rem;
+    --40px: 2.5rem;
+    --48px: 3rem;
+    --100px: 6.25rem;
+    --300px: 18.75rem;
+    --480px: 30rem;
+    --768px: 48rem;
+    --1000px: 62.5rem;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+.indexSection {
+    background-color: hsl(249, 100%, 89%);
+    background: linear-gradient(to right, hsl(0, 0%, 89%), hsl(249, 100%, 89%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.postSection {
+    background-color: hsl(249, 100%, 89%);
+    background: linear-gradient(to right, hsl(0, 0%, 89%), hsl(249, 100%, 89%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.container {
+    background-color:hsl(264, 100%, 98%);
+    border-radius: var(--32px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow: hidden;
+    width: var(--768px);
+    max-width: 100%;
+    min-height: var(--480px);
+}
+
+.container p {
+    font-size: var(--16px);
+    line-height: var(--24px);
+    letter-spacing: 0.3px;
+    margin: var(--24px) 0;
+}
+
+.container span {
+    font-size: var(--12px);
+}
+
+.container a {
+    color: hsl(0, 0%, 20%);
+    font-size: var(--16px);
+    text-decoration: none;
+    margin: var(--16px) 0;
+}
+
+.container button {
+    background-color: hsl(271, 100%, 20%);
+    color: hsl(264, 100%, 98%);
+    font-size: var(--12px);
+    padding: var(--12px) var(--48px);
+    border: 1px solid transparent;
+    border-radius: var(--8px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: var(--8px);
+    cursor: pointer;
+}
+
+.container button.hidden {
+    background-color: transparent;
+    border-color: hsl(264, 100%, 98%);
+}
+
+.container form {
+    background-color: hsl(264, 100%, 98%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 var(--40px);
+    height: 100%;
+}
+
+.container input {
+    background-color: hsl(0, 0%, 85%);
+    border: none;
+    margin: var(--8px) 0;
+    padding: var(--12px) var(--16px);
+    font-size: var(--12px);
+    border-radius: var(--8px);
+    width: 100%;
+    outline: none;
+}
+
+.form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.6s ease-in-out;
+}
+
+.sign-in {
+    left: 0;
+    width: 50%;
+    z-index: 2;
+}
+
+.container.active .sign-in {
+    transform: translateX(100%);
+}
+
+.sign-up {
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
+
+.container.active .sign-up {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    animation: move 0.6s;
+}
+
+@keyframes move {
+    0%, 49.99% {
+        opacity: 0;
+        z-index: 1;
+    }
+    50%, 100% {
+        opacity: 1;
+        z-index: 5;
+    }   
+}
+
+.social-icons {
+    margin: var(--24px) 0;
+}
+
+.social-icons a {
+    border: 1px solid hsl(0, 0%, 80%);
+    border-radius: 20%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 3px;
+    width: var(--40px);
+    height: var(--40px);
+}
+
+.toggle-container {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    transition: all 0.6s ease-in-out;
+    border-radius: var(--100px) 0 0 var(--100px);
+    z-index: 1000;
+}
+
+.container.active .toggle-container {
+    transform: translateX(-100%);
+    border-radius: 0 var(--100px) var(--100px) 0;
+}
+
+.toggle {
+    background-color: hsl(258, 58%, 42%);
+    height: 100%;
+    background: linear-gradient(to right, #5c6bc0, #512da8);
+    color: hsl(264, 100%, 98%);
+    position: relative;
+    left: -100%;
+    height: 100%;
+    width: 200%;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.container.active .toggle {
+    transform: translateX(50%);
+}
+
+.toggle-panel {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 var(--32px);
+    text-align: center;
+    top: 0;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.toggle-left {
+    transform: translateX(-200%);
+}
+
+.container.active .toggle-left {
+    transform: translateX(0);
+}
+
+.toggle-right {
+    right: 0;
+    transform: translateX(0);
+}
+
+.container.active .toggle-right {
+    transform: translateX(200%);
+}
+
+#alertCreate,
+#alertLogin,
+#alertPost {
+    margin-top: var(--16px);
+    margin-bottom: var(--8px);
+    font-size: var(--16px);
+    color: red;
+}
+
+nav {
+    background-color: hsl(270, 75%, 34%);
+    box-shadow: 0 var(--8px) var(--16px) rgba(0, 0, 0, 0.35);
+    color: #fff;
+    width: 100%;
+    padding: var(--40px);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+}
+
+nav h1 {
+    color: hsl(264, 100%, 98%);
+    font-size: var(--32px);
+    border-radius: var(--8px);
+    font-weight: 900;
+    letter-spacing: var(--8px);
+    text-transform: uppercase;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+nav button {
+    background-color: hsl(271, 91%, 9%);
+    color: hsl(264, 100%, 98%);
+    font-size: var(--16px);
+    position: absolute;
+    right: var(--40px);
+    padding: var(--12px) var(--32px);
+    border: 1px solid transparent;
+    border-radius: var(--8px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.6s ease;
+}
+
+nav button:hover {
+    background-color: hsla(271, 91%, 9%, 0.747);
+    color: hsla(264, 100%, 98%, 0.747);
+    transform: scale(1.05);
+}
+
+.postContainer {
+    width: 80%;
+    margin: var(--24px) auto;
+    max-width: 80%;
+    padding: var(--24px);
+    border: var(--12px) solid transparent;
+    border-radius: var(--12px);
+    background-color: hsl(264, 100%, 98%);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+#greetingMessage {
+    margin-top: var(--24px);
+    font-size: var(--24px);
+    font-weight: 600;
+}
+
+.postContainer textarea {
+    width: 70%;
+    margin-top: var(--24px);
+    height: var(--100px);
+    padding: var(--12px);
+    border: 5px solid hsla(270, 75%, 34%, 0.9);
+    border-radius: 4px;
+    font-size: var(--16px);
+    resize: none;
+}
+
+.postContainer button {
+    background-color: hsl(271, 91%, 21%, 0.9);
+    color: hsl(264, 100%, 98%);
+    margin-top: var(--32px);
+    padding: var(--12px) var(--32px);
+    border: 1px solid transparent;
+    border-radius: var(--8px);
+    font-size: var(--16px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.postContainer button:hover {
+    background-color: hsl(271, 91%, 21%, 0.85);
+    color: hsla(264, 100%, 98%, 0.85);
+}
+
+.postContainer h2 {
+    margin-top: var(--48px);
+    font-size: var(--24px);
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.no-posts-message {
+    margin-top: var(--12px);
+    text-align: center;
+    font-size: var(--16px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: hsl(0, 0%, 53%);
+}
+
+#posts {
+    margin-top: var(--12px);
+    align-items: center;
+    width: 80%;
+    max-width: 80%;
+}
+
+.post {
+    background-color: hsl(0, 0%, 100%);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    font-size: var(--16px);
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+    padding: var(--56px) var(--32px);
+    margin: 0 auto;
+    margin-bottom: var(--16px);
+    border: 1px solid hsl(0, 0%, 87%);
+    border-radius: var(--8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.post:hover {
+    transform: scale(1.01);
+}

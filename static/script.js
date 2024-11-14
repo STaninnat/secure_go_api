@@ -1,33 +1,110 @@
 const API_BASE = '/v1';
-let currentUserAPIKey = null;
-let currentUserToken = null;
+let refreshInterval;
 
-function initLoginPage() {
-    console.log("Initializing Login Page");
+async function fetchWithAlert(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        credentials: 'include',
+        headers: {
+            ...options.headers,
+        }
+    });
 
-    async function loginUser() {
-        const name = document.getElementById('nameField').value.trim();
-        const password = document.getElementById('passwordField').value.trim();
-        
-        if (!name || !password) {
-            alert("Please enter both username and password.");
+    if (response.status === 401) {
+        const refreshResponse = await refreshToken();
+        if (refreshResponse && refreshResponse.ok) {
+            return fetch(url, {
+                ...options,
+                credentials: 'include',
+                headers: {
+                    ...options.headers,
+                }
+            });
+        } else {
+            window.location.href = "/";
             return;
         }
-        
-        const response = await fetch(`${API_BASE}/login`, {
+    }
+    
+    if (response.status > 299) {
+        // console.error('Error during token refresh:', error);
+        return response;
+    }
+    return response;
+}
+
+async function refreshToken() {
+    try {
+        const response = await fetch(`${API_BASE}/refresh`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            window.location.href = "/";
+            return response;
+        }
+
+        return response;
+    } catch (error) {
+        window.location.href = "/";
+        return { ok: false, message: 'An error occurred while refreshing the token' };
+    }
+}
+
+function displayMessage(elementId, message, isError = false, duration = 0) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.style.color = isError ? 'red' : 'green';
+
+    if (duration > 0) {
+        setTimeout(() => {
+            element.textContent = '';
+        }, duration);
+    }
+}
+
+function initLoginPage() {
+    async function loginUser(event) {
+        if (event) event.preventDefault();
+
+        const name = document.getElementById('nameFieldLogin').value.trim();
+        const password = document.getElementById('passwordFieldLogin').value.trim();
+        const alertElement = 'alertLogin';
+
+        if (!name && !password) {
+            displayMessage(alertElement, "Please enter both username and password.", true);
+            return;
+        } else if (!name) {
+            displayMessage(alertElement, "Please enter username.", true);
+            return;
+        } else if (!password) {
+            displayMessage(alertElement, "Please enter password.", true);
+            return;
+        }
+
+        const response = await fetchWithAlert(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, password })
         });
 
-        if (response.ok) {
-            const user = await response.json();
-            localStorage.setItem('currentUserToken', user.token);
-
-            alert(`Login successful, welcome ${name}`);
-            window.location.href = "post.html"; 
+        if (response && response.ok) {
+            displayMessage(alertElement, `Login successful...WELCOME BACK ${name}`);
+            sessionStorage.setItem('username', name);
+            setTimeout(() => {
+                window.location.href = "/static/posts.html";
+            }, 2000);
         } else {
-            alert("Login failed. Please check your credentials.");
+            const errorData = await response.json();
+
+            if ((response.status === 400) && (errorData.error === "username not found")) {
+                displayMessage(alertElement, "Invalid username. Please try again.", true);
+            } else if ((response.status === 400) && (errorData.error === "incorrect password")) {
+                displayMessage(alertElement, "Invalid password. Please try again.", true);
+            } else {
+                displayMessage(alertElement, "Login failed. Please check your credentials.", true);
+            }
         }
     }
 
@@ -35,14 +112,21 @@ function initLoginPage() {
 }
 
 function initCreateUserPage() {
-    console.log("Initializing Create User Page");
+    async function createUser(event) {
+        if (event) event.preventDefault();
 
-    async function createUser() {
-        const name = document.getElementById('nameField').value.trim();
-        const password = document.getElementById('passwordField').value.trim();
+        const name = document.getElementById('nameFieldCreate').value.trim();
+        const password = document.getElementById('passwordFieldCreate').value.trim();
+        const alertElement = 'alertCreate';
         
-        if (!name || !password) {
-            alert("Please enter both username and password.");
+        if (!name && !password) {
+            displayMessage(alertElement, "Please enter both username and password", true);
+            return;
+        } else if (!name) {
+            displayMessage(alertElement, "Please enter username", true);
+            return;
+        } else if (!password) {
+            displayMessage(alertElement, "Please enter password", true);
             return;
         }
         
@@ -52,72 +136,88 @@ function initCreateUserPage() {
             body: JSON.stringify({ name, password })
         });
 
-        if (response.ok) {
-            const user = await response.json();
-
-            localStorage.setItem('currentUserAPIKey', user.api_key);
-            localStorage.setItem('currentUserToken', user.token);
-
-            alert("User created successfully. Welcome!");
-
-            window.location.href = "post.html";
+        if (response && response.ok) {
+            displayMessage(alertElement, "User created successfully...WELCOME!");
+            setTimeout(() => {
+                window.location.href = "/static/posts.html";
+            }, 2000);
         } else {
-            alert("User creation failed.");
+            const errorData = await response.json();
+            if ((response.status === 400) && (errorData.error === "username already exists")) {
+                displayMessage(alertElement, "Username already exists. Please try again.", true);
+            } else {
+                displayMessage(alertElement, "User creation failed", true);
+            }
         }
     }
 
     window.createUser = createUser;
 }
 
-function initPostPage() {
-    console.log("Initializing Post Page");
-
-    currentUserToken = localStorage.getItem('currentUserToken');
-
-    if (!currentUserToken) {
-        alert("Please log in first.");
-        window.location.href = "index.html";
-        return;
+async function initPostPage() {
+    const username = sessionStorage.getItem('username');
+    const alertElement = 'alertPost';
+    
+    if (username) {
+        document.getElementById('greetingMessage').textContent = `Hello, ${username}! What's on your mind today?`;
+    } else {
+        document.getElementById('greetingMessage').textContent = `Hello! What's on your mind today?`;
     }
 
     async function loadPosts() {
-        const response = await fetch(`${API_BASE}/posts`, {
-            headers: { 'Authorization': `Bearer ${currentUserToken}` }
+        const response = await fetchWithAlert(`${API_BASE}/posts`, {
+            method: 'GET',
+            credentials: 'include'
         });
+
+        const postsContainer = document.getElementById('posts');
+        postsContainer.innerHTML = '';
 
         if (response.ok) {
             const posts = await response.json();
-            const postsContainer = document.getElementById('posts');
-            postsContainer.innerHTML = '';
-            posts.forEach(post => displayPost(post));
+            if (posts.length === 0) {
+                const noPostsMessage = document.createElement('p');
+                noPostsMessage.className = 'no-posts-message';
+                noPostsMessage.id = 'noPostsMessage';
+                noPostsMessage.textContent = 'No posts yet. Be the first to post something!';
+                postsContainer.appendChild(noPostsMessage);
+            } else {
+                posts.forEach(post => displayPost(post));
+            }
         } else {
-        alert('Error loading posts');
-    }
+            console.error(`Error: ${response.status} ${response.statusText}`);
+        }
     }
 
     async function createPost() {
         const postContent = document.getElementById('newPostContent').value;
 
         if (!postContent) {
-            alert('Please enter post content');
+            displayMessage(alertElement, 'Please enter post content', true, 5000);
             return;
         }
 
-        const response = await fetch(`${API_BASE}/posts`, {
+        const response = await fetchWithAlert(`${API_BASE}/posts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentUserToken}`
             },
+            credentials: 'include',
             body: JSON.stringify({ post: postContent })
         });
 
         if (response.ok) {
+            const noPostsMessage = document.getElementById('noPostsMessage');
+            if (noPostsMessage) {
+                noPostsMessage.remove();
+            }
+
             const post = await response.json();
             displayPost(post);
             document.getElementById('newPostContent').value = '';
+            displayMessage(alertElement, 'Post created successfully!', false, 5000);
         } else {
-            alert("Failed to create post.");
+            displayMessage(alertElement, 'Failed to create post', true);
         }
     }
 
@@ -128,63 +228,76 @@ function initPostPage() {
         document.getElementById('posts').appendChild(postElement);
     }
 
-    function logout() {
-        localStorage.removeItem('currentUserToken');
-        currentUserToken = null;
-        window.location.href = "index.html";
+    async function logout() {
+        const response = await fetchWithAlert(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            displayMessage(alertElement, 'Logged out successfully');
+
+            setTimeout(() => {
+                sessionStorage.removeItem('username');
+                clearInterval(refreshInterval);
+                window.location.href = "/";
+            }, 2000);
+        } else {
+            displayMessage(alertElement, 'Failed to log out', true);
+        }
     }
 
     window.createPost = createPost;
     window.logout = logout;
+
+    // const refreshed = await refreshToken();
+    // if (refreshed && refreshed.ok) {
+    //     loadPosts();
+    // }
     loadPosts();
+
+    refreshInterval = setInterval(async () => {
+        try {
+            const result = await refreshToken();
+            if (!result || !result.ok) {
+                alert("Session expired. Please log in again.");
+                window.location.href = "/";
+            }
+        } catch (error) {
+            alert("Error refreshing session. Please check your connection.");
+        }
+    }, 10 * 60 * 1000);
 }
 
-async function getUser() {
-    const response = await fetchWithAlert(`${API_BASE}/users`, {
-        headers: {
-                'Authorization': `Bearer ${currentUserToken}`
+function initContainer() {
+    const container = document.getElementById('container');
+    const registerBtn = document.getElementById('register');
+    const loginBtn = document.getElementById('login');
+    const alertCreate = document.getElementById('alertCreate');
+    const alertLogin = document.getElementById('alertLogin');
+
+    registerBtn.addEventListener('click', () => {
+        container.classList.add("active");
+        if (alertLogin) {
+            alertLogin.textContent = '';
         }
     });
 
-    if (!response) return null; 
-    return await response.json();
-}
-
-async function fetchWithAlert(url, options) {
-    const token = localStorage.getItem('currentUserToken');
-    if (token) {
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-        };
-    } else {
-        alert("Session expired. Please log in again.");
-        window.location.href = "index.html";
-        return;
-    }
-
-    const response = await fetch(url, options);
-    if (response.status === 401) {
-        alert("Session expired. Please log in again.");
-        window.location.href = "index.html";
-        return;
-    }
-    if (response.status > 299) {
-        alert(`Error: ${response.status}`);
-        return;
-    }
-    return response;
+    loginBtn.addEventListener('click', () => {
+        container.classList.remove("active");
+        if (alertCreate) {
+            alertCreate.textContent = '';
+        }
+    });
 }
 
 window.onload = function () {
-    currentUserToken = localStorage.getItem('currentUserToken');
-
     const path = window.location.pathname;
-    if (path.includes('index.html')) {
+    if (path === '/' || path.endsWith('/index.html')) {
+        initContainer();
         initLoginPage();
-    } else if (path.includes('create_user.html')) {
         initCreateUserPage();
-    } else if (path.includes('post.html')) {
+    } else if (path.endsWith('/static/posts.html')) {
         initPostPage();
     }
 };

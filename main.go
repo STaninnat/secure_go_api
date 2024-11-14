@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
@@ -13,16 +15,17 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
-	_ "github.com/lib/pq"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type apiConfig struct {
 	DB            *database.Queries
+	DBConn        *sql.DB
 	JWTSecret     string
 	RefreshSecret string
 }
 
-//go:embed static/*
+//go:embed index.html static/*
 var staticFiles embed.FS
 
 func main() {
@@ -41,25 +44,34 @@ func main() {
 		log.Fatal("warning: JWT_SECRET environment variable is not set")
 	}
 
-	apicfg := apiConfig{}
+	refreshSecret := os.Getenv("REFRESH_SECRET")
+	if refreshSecret == "" {
+		log.Fatal("warning: REFRESH_SECRET environment variable is not set")
+	}
+
+	apicfg := apiConfig{
+		JWTSecret:     jwtSecret,
+		RefreshSecret: refreshSecret,
+	}
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Println("warning: DATABASE_URL environment variable is not set")
 		log.Println("Running without CRUD endpoints")
 	} else {
-		db, err := sql.Open("postgres", dbURL)
+		db, err := sql.Open("libsql", dbURL)
 		if err != nil {
 			log.Fatalf("warning: can't connect to database: %v", err)
 		}
 		dbQueries := database.New(db)
 		apicfg.DB = dbQueries
+		apicfg.DBConn = db
 		log.Println("Connected to database!")
 	}
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://localhost:8080"},
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
@@ -67,12 +79,43 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "static/index.html")
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		f, err := staticFiles.Open("index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		w.Header().Set("Content-Type", "text/html")
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
+		filepath := r.URL.Path[len("/static/"):]
+
+		f, err := staticFiles.Open("static/" + filepath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		defer f.Close()
+
+		if strings.HasSuffix(filepath, ".css") {
+			w.Header().Set("Content-Type", "text/css")
+		} else if strings.HasSuffix(filepath, ".js") {
+			w.Header().Set("Content-Type", "application/javascript")
+		} else if strings.HasSuffix(filepath, ".html") {
+			w.Header().Set("Content-Type", "text/html")
+		} else if strings.HasSuffix(filepath, ".json") {
+			w.Header().Set("Content-Type", "application/json")
 		} else {
-			fileServer := http.FileServer(http.FS(staticFiles))
-			http.StripPrefix("/", fileServer).ServeHTTP(w, r)
+			w.Header().Set("Content-Type", "text/plain")
+		}
+
+		if _, err := io.Copy(w, f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
@@ -82,6 +125,7 @@ func main() {
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 
 		v1Router.Post("/login", apicfg.handlerLogin)
+		v1Router.Post("/logout", apicfg.middlewareAuth(apicfg.handlerLogout))
 
 		v1Router.Post("/refresh", apicfg.handlerRefreshKey)
 

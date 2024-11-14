@@ -15,8 +15,8 @@ func (apicfg *apiConfig) handlerPostsCreate(w http.ResponseWriter, r *http.Reque
 		Post string `json:"post"`
 	}
 
-	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters")
