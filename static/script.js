@@ -27,7 +27,6 @@ async function fetchWithAlert(url, options = {}) {
     }
     
     if (response.status > 299) {
-        // console.error('Error during token refresh:', error);
         return response;
     }
     return response;
@@ -146,7 +145,7 @@ function initCreateUserPage() {
             if ((response.status === 400) && (errorData.error === "username already exists")) {
                 displayMessage(alertElement, "Username already exists. Please try again.", true);
             } else {
-                console.error('User creation failed:', error);
+                console.error(`User creation failed ${errorData}`);
                 displayMessage(alertElement, "User creation failed", true);
             }
         }
