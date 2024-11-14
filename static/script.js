@@ -146,6 +146,7 @@ function initCreateUserPage() {
             if ((response.status === 400) && (errorData.error === "username already exists")) {
                 displayMessage(alertElement, "Username already exists. Please try again.", true);
             } else {
+                 console.error('User creation failed:', error);
                 displayMessage(alertElement, "User creation failed", true);
             }
         }

@@ -29,26 +29,6 @@ func databaseUserToUser(user database.User) (User, error) {
 	}, nil
 }
 
-// type UsersToken struct {
-// 	ID                    uuid.UUID `json:"id"`
-// 	CreatedAt             time.Time `json:"created_at"`
-// 	AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
-// 	RefreshToken          string    `json:"refresh_token"`
-// 	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
-// 	UserID                uuid.UUID `json:"user_id"`
-// }
-
-// func databaseUsersTokenToUsersToken(userstoken database.UsersToken) (UsersToken, error) {
-// 	return UsersToken{
-// 		ID:                    userstoken.ID,
-// 		CreatedAt:             userstoken.CreatedAt,
-// 		AccessTokenExpiresAt:  userstoken.AccessTokenExpiresAt,
-// 		RefreshToken:          userstoken.RefreshToken,
-// 		RefreshTokenExpiresAt: userstoken.RefreshTokenExpiresAt,
-// 		UserID:                userstoken.UserID,
-// 	}, nil
-// }
-
 type Post struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
