@@ -1,5 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
+:root {
+    --8px: 0.5rem;
+    --12px: 0.75rem;
+    --16px: 1rem;
+    --24px: 1.5rem;
+    --32px: 2rem;
+    --40px: 2.5rem;
+    --48px: 3rem;
+    --100px: 6.25rem;
+    --300px: 18.75rem;
+    --480px: 30rem;
+    --768px: 48rem;
+    --1000px: 62.5rem;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -28,44 +43,44 @@
 
 .container {
     background-color:hsl(264, 100%, 98%);
-    border-radius: 30px;
+    border-radius: var(--32px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
     position: relative;
     overflow: hidden;
-    width: 768px;
+    width: var(--768px);
     max-width: 100%;
-    min-height: 480px;
+    min-height: var(--480px);
 }
 
 .container p {
-    font-size: 14x;
-    line-height: 20px;
+    font-size: var(--16px);
+    line-height: var(--24px);
     letter-spacing: 0.3px;
-    margin: 20px 0;
+    margin: var(--24px) 0;
 }
 
 .container span {
-    font-size: 12px;
+    font-size: var(--12px);
 }
 
 .container a {
     color: hsl(0, 0%, 20%);
-    font-size: 13px;
+    font-size: var(--16px);
     text-decoration: none;
-    margin: 15px 0px;
+    margin: var(--16px) 0;
 }
 
 .container button {
     background-color: hsl(271, 100%, 20%);
     color: hsl(264, 100%, 98%);
-    font-size: 12px;
-    padding: 10px 45px;
+    font-size: var(--12px);
+    padding: var(--12px) var(--48px);
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--8px);
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    margin-top: 10px;
+    margin-top: var(--8px);
     cursor: pointer;
 }
 
@@ -80,17 +95,17 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 40px;
+    padding: 0 var(--40px);
     height: 100%;
 }
 
 .container input {
     background-color: hsl(0, 0%, 85%);
     border: none;
-    margin: 8px 0;
-    padding: 10px 15px;
-    font-size: 13px;
-    border-radius: 8px;
+    margin: var(--8px) 0;
+    padding: var(--12px) var(--16px);
+    font-size: var(--12px);
+    border-radius: var(--8px);
     width: 100%;
     outline: none;
 }
@@ -99,7 +114,7 @@
     position: absolute;
     top: 0;
     height: 100%;
-    transition: all 0,6s ease-in-out;
+    transition: all 0.6s ease-in-out;
 }
 
 .sign-in {
@@ -138,7 +153,7 @@
 }
 
 .social-icons {
-    margin: 20px 0;
+    margin: var(--24px) 0;
 }
 
 .social-icons a {
@@ -148,8 +163,8 @@
     justify-content: center;
     align-items: center;
     margin: 0 3px;
-    width: 40px;
-    height: 40px;
+    width: var(--40px);
+    height: var(--40px);
 }
 
 .toggle-container {
@@ -160,13 +175,13 @@
     height: 100%;
     overflow: hidden;
     transition: all 0.6s ease-in-out;
-    border-radius: 100px 0 0 100px;
+    border-radius: var(--100px) 0 0 var(--100px);
     z-index: 1000;
 }
 
 .container.active .toggle-container {
     transform: translateX(-100%);
-    border-radius: 0 100px 100px 0;
+    border-radius: 0 var(--100px) var(--100px) 0;
 }
 
 .toggle {
@@ -194,7 +209,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 30px;
+    padding: 0 var(--32px);
     text-align: center;
     top: 0;
     transform: translateX(0);
@@ -221,18 +236,18 @@
 #alertCreate,
 #alertLogin,
 #alertPost {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    font-size: 14px;
+    margin-top: var(--16px);
+    margin-bottom: var(--8px);
+    font-size: var(--16px);
     color: red;
 }
 
 nav {
     background-color: hsl(270, 75%, 34%);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 var(--8px) var(--16px) rgba(0, 0, 0, 0.35);
     color: #fff;
     width: 100%;
-    padding: 40px;
+    padding: var(--40px);
     position: relative;
     display: flex;
     align-items: center;
@@ -242,10 +257,10 @@ nav {
 
 nav h1 {
     color: hsl(264, 100%, 98%);
-    font-size: 32px;
-    border-radius: 8px;
+    font-size: var(--32px);
+    border-radius: var(--8px);
     font-weight: 900;
-    letter-spacing: 5px;
+    letter-spacing: var(--8px);
     text-transform: uppercase;
     margin: 0;
     position: absolute;
@@ -257,17 +272,17 @@ nav h1 {
 nav button {
     background-color: hsl(271, 91%, 9%);
     color: hsl(264, 100%, 98%);
-    font-size: 16px;
+    font-size: var(--16px);
     position: absolute;
-    right: 40px;
-    padding: 10px 30px;
+    right: var(--40px);
+    padding: var(--12px) var(--32px);
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--8px);
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: transform 0.6s ease;
 }
 
 nav button:hover {
@@ -278,11 +293,11 @@ nav button:hover {
 
 .postContainer {
     width: 80%;
-    margin: 20px auto;
+    margin: var(--24px) auto;
     max-width: 80%;
-    padding: 20px;
-    border: 10px solid transparent;
-    border-radius: 10px;
+    padding: var(--24px);
+    border: var(--12px) solid transparent;
+    border-radius: var(--12px);
     background-color: hsl(264, 100%, 98%);
     display: flex;
     align-items: center;
@@ -290,30 +305,30 @@ nav button:hover {
 }
 
 #greetingMessage {
-    margin-top: 20px;
-    font-size: 24px;
+    margin-top: var(--24px);
+    font-size: var(--24px);
     font-weight: 600;
 }
 
 .postContainer textarea {
     width: 70%;
-    margin-top: 20px;
-    height: 100px;
-    padding: 10px;
+    margin-top: var(--24px);
+    height: var(--100px);
+    padding: var(--12px);
     border: 5px solid hsla(270, 75%, 34%, 0.9);
     border-radius: 4px;
-    font-size: 16px;
+    font-size: var(--16px);
     resize: none;
 }
 
 .postContainer button {
     background-color: hsl(271, 91%, 21%, 0.9);
     color: hsl(264, 100%, 98%);
-    margin-top: 30px;
-    padding: 10px 30px;
+    margin-top: var(--32px);
+    padding: var(--12px) var(--32px);
     border: 1px solid transparent;
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: var(--8px);
+    font-size: var(--16px);
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -326,23 +341,23 @@ nav button:hover {
 }
 
 .postContainer h2 {
-    margin-top: 50px;
-    font-size: 24px;
+    margin-top: var(--48px);
+    font-size: var(--24px);
     font-weight: 600;
     margin-bottom: 5px;
 }
 
 .no-posts-message {
-    margin-top: 10px;
+    margin-top: var(--12px);
     text-align: center;
-    font-size: 16px;
+    font-size: var(--16px);
     font-weight: 600;
     letter-spacing: 0.5px;
     color: hsl(0, 0%, 53%);
 }
 
 #posts {
-    margin-top: 10px;
+    margin-top: var(--12px);
     align-items: center;
     width: 80%;
     max-width: 80%;
@@ -353,17 +368,17 @@ nav button:hover {
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: normal;
-    font-size: 16px;
+    font-size: var(--16px);
     font-weight: 400;
     line-height: 1.6;
     letter-spacing: 0.5px;
-    padding: 50px 30px;
+    padding: var(--56px) var(--32px);
     margin: 0 auto;
-    margin-bottom: 15px;
+    margin-bottom: var(--16px);
     border: 1px solid hsl(0, 0%, 87%);
-    border-radius: 8px;
+    border-radius: var(--8px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
 }
 
 .post:hover {
