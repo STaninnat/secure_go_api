@@ -75,7 +75,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		ApiKeyExpiresAt: apiKeyExpiresAt,
 	})
 	if err != nil {
-		log.Println("couldn't create user: ", err)
+		log.Printf("couldn't create user: failed to execute SQL: %v", err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't create user")
 		return
 	}
