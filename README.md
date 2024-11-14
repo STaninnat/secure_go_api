@@ -1,5 +1,7 @@
 # Capstone Project
 
+![code coverage badge](https://github.com/STaninnat/capstone_project/actions/workflows/ci.yml/badge.svg)
+
 A Go-based web API with user and post management, built using Chi for routing, and connected to a PostgreSQL database.
 
 ## Features

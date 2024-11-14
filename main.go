@@ -15,7 +15,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
-	_ "github.com/lib/pq"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type apiConfig struct {
@@ -59,7 +59,7 @@ func main() {
 		log.Println("warning: DATABASE_URL environment variable is not set")
 		log.Println("Running without CRUD endpoints")
 	} else {
-		db, err := sql.Open("postgres", dbURL)
+		db, err := sql.Open("libsql", dbURL)
 		if err != nil {
 			log.Fatalf("warning: can't connect to database: %v", err)
 		}
@@ -71,7 +71,7 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://localhost:8080"},
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
