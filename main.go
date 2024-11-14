@@ -63,10 +63,15 @@ func main() {
 		if err != nil {
 			log.Fatalf("warning: can't connect to database: %v", err)
 		}
+
+		if err := db.Ping(); err != nil {
+			log.Fatalf("Failed to ping database: %v", err)
+		}
+
 		dbQueries := database.New(db)
 		apicfg.DB = dbQueries
 		apicfg.DBConn = db
-		log.Println("Connected to database!")
+		log.Println("Connected to database successfully!")
 	}
 
 	router := chi.NewRouter()
@@ -121,6 +126,7 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	if apicfg.DB != nil {
+		log.Println("Configuring /v1 API endpoints")
 		v1Router.Post("/users", apicfg.handlerUsersCreate)
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 
