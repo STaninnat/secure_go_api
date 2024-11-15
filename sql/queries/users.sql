@@ -17,6 +17,6 @@ SELECT * FROM users WHERE id = ?;
 
 -- name: UpdateUser :exec
 UPDATE users
-SET api_key = ?, api_key_expires_at = ?
+SET updated_at = ?, api_key = ?, api_key_expires_at = ?
 WHERE id = ?;
 --

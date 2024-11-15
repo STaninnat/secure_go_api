@@ -41,6 +41,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		respondWithError(w, http.StatusInternalServerError, "invalid user ID")
 		return
 	}
+
 	newAccessToken, err := generateJWTToken(userID, apicfg.JWTSecret, newAccessTokenExpiresAtTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new access token")
@@ -48,6 +49,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	}
 
 	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
+		UpdatedAt:       time.Now().UTC(),
 		ApiKey:          newHashedApiKey,
 		ApiKeyExpiresAt: newApiKeyExpiresAtTime,
 		ID:              user.UserID,
@@ -60,6 +62,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
 	err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		UpdatedAt:             time.Now().UTC(),
 		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,

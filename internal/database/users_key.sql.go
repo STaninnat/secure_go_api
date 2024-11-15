@@ -11,13 +11,14 @@ import (
 )
 
 const createUserRfKey = `-- name: CreateUserRfKey :exec
-INSERT INTO users_key (id, created_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO users_key (id, created_at, updated_at ,access_token_expires_at, refresh_token, refresh_token_expires_at, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateUserRfKeyParams struct {
 	ID                    string
 	CreatedAt             time.Time
+	UpdatedAt             time.Time
 	AccessTokenExpiresAt  time.Time
 	RefreshToken          string
 	RefreshTokenExpiresAt time.Time
@@ -28,6 +29,7 @@ func (q *Queries) CreateUserRfKey(ctx context.Context, arg CreateUserRfKeyParams
 	_, err := q.db.ExecContext(ctx, createUserRfKey,
 		arg.ID,
 		arg.CreatedAt,
+		arg.UpdatedAt,
 		arg.AccessTokenExpiresAt,
 		arg.RefreshToken,
 		arg.RefreshTokenExpiresAt,
@@ -38,7 +40,7 @@ func (q *Queries) CreateUserRfKey(ctx context.Context, arg CreateUserRfKeyParams
 
 const getRfKeyByUserID = `-- name: GetRfKeyByUserID :one
 
-SELECT id, created_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id FROM users_key WHERE user_id = ?
+SELECT id, created_at, updated_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id FROM users_key WHERE user_id = ?
 LIMIT 1
 `
 
@@ -48,6 +50,7 @@ func (q *Queries) GetRfKeyByUserID(ctx context.Context, userID string) (UsersKey
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.AccessTokenExpiresAt,
 		&i.RefreshToken,
 		&i.RefreshTokenExpiresAt,
@@ -58,7 +61,7 @@ func (q *Queries) GetRfKeyByUserID(ctx context.Context, userID string) (UsersKey
 
 const getUserByRfKey = `-- name: GetUserByRfKey :one
 
-SELECT id, created_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id FROM users_key WHERE refresh_token = ? 
+SELECT id, created_at, updated_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id FROM users_key WHERE refresh_token = ? 
 LIMIT 1
 `
 
@@ -68,6 +71,7 @@ func (q *Queries) GetUserByRfKey(ctx context.Context, refreshToken string) (User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.AccessTokenExpiresAt,
 		&i.RefreshToken,
 		&i.RefreshTokenExpiresAt,
@@ -79,11 +83,12 @@ func (q *Queries) GetUserByRfKey(ctx context.Context, refreshToken string) (User
 const updateUserRfKey = `-- name: UpdateUserRfKey :exec
 
 UPDATE users_key
-SET access_token_expires_at = ?, refresh_token = ?, refresh_token_expires_at = ?
+SET updated_at = ?,access_token_expires_at = ?, refresh_token = ?, refresh_token_expires_at = ?
 WHERE user_id = ?
 `
 
 type UpdateUserRfKeyParams struct {
+	UpdatedAt             time.Time
 	AccessTokenExpiresAt  time.Time
 	RefreshToken          string
 	RefreshTokenExpiresAt time.Time
@@ -92,6 +97,7 @@ type UpdateUserRfKeyParams struct {
 
 func (q *Queries) UpdateUserRfKey(ctx context.Context, arg UpdateUserRfKeyParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserRfKey,
+		arg.UpdatedAt,
 		arg.AccessTokenExpiresAt,
 		arg.RefreshToken,
 		arg.RefreshTokenExpiresAt,

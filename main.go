@@ -13,7 +13,6 @@ import (
 	"github.com/STaninnat/capstone_project/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
-	"github.com/joho/godotenv"
 
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
@@ -29,11 +28,6 @@ type apiConfig struct {
 var staticFiles embed.FS
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Printf("warning: assuming default configuration. .env unreadable | %v", err)
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("warning: PORT environment variable is not set")

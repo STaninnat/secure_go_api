@@ -1,11 +1,11 @@
 -- name: CreateUserRfKey :exec
-INSERT INTO users_key (id, created_at, access_token_expires_at, refresh_token, refresh_token_expires_at, user_id)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO users_key (id, created_at, updated_at ,access_token_expires_at, refresh_token, refresh_token_expires_at, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 --
 
 -- name: UpdateUserRfKey :exec
 UPDATE users_key
-SET access_token_expires_at = ?, refresh_token = ?, refresh_token_expires_at = ?
+SET updated_at = ?,access_token_expires_at = ?, refresh_token = ?, refresh_token_expires_at = ?
 WHERE user_id = ?;
 --
 

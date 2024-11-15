@@ -2,7 +2,8 @@
 CREATE TABLE 
     users_key (
         id TEXT PRIMARY KEY,
-        created_at TIMESTAMP  NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP NOT NULL,
         access_token_expires_at TIMESTAMP  NOT NULL,
         refresh_token TEXT UNIQUE NOT NULL,
         refresh_token_expires_at TIMESTAMP  NOT NULL,
