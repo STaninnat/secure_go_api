@@ -1,14 +1,14 @@
 -- +goose Up
 CREATE TABLE
     users (
-        id UUID PRIMARY KEY,
-        created_at TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP NOT NULL,
+        id TEXT PRIMARY KEY,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
         name TEXT NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        api_key VARCHAR(64) UNIQUE NOT NULL,
-        api_key_expires_at TIMESTAMP NOT NULL
+        password TEXT NOT NULL,
+        api_key TEXT UNIQUE NOT NULL,
+        api_key_expires_at TEXT NOT NULL
     );
 
 -- +goose Down
-DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS users;

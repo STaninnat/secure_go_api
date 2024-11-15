@@ -7,9 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 const createUserRfKey = `-- name: CreateUserRfKey :one
@@ -19,15 +16,15 @@ RETURNING id
 `
 
 type CreateUserRfKeyParams struct {
-	ID                    uuid.UUID
-	CreatedAt             time.Time
-	AccessTokenExpiresAt  time.Time
+	ID                    string
+	CreatedAt             string
+	AccessTokenExpiresAt  string
 	RefreshToken          string
-	RefreshTokenExpiresAt time.Time
-	UserID                uuid.UUID
+	RefreshTokenExpiresAt string
+	UserID                string
 }
 
-func (q *Queries) CreateUserRfKey(ctx context.Context, arg CreateUserRfKeyParams) (uuid.UUID, error) {
+func (q *Queries) CreateUserRfKey(ctx context.Context, arg CreateUserRfKeyParams) (string, error) {
 	row := q.db.QueryRowContext(ctx, createUserRfKey,
 		arg.ID,
 		arg.CreatedAt,
@@ -36,7 +33,7 @@ func (q *Queries) CreateUserRfKey(ctx context.Context, arg CreateUserRfKeyParams
 		arg.RefreshTokenExpiresAt,
 		arg.UserID,
 	)
-	var id uuid.UUID
+	var id string
 	err := row.Scan(&id)
 	return id, err
 }
@@ -47,7 +44,7 @@ SELECT id, created_at, access_token_expires_at, refresh_token, refresh_token_exp
 LIMIT 1
 `
 
-func (q *Queries) GetRfKeyByUserID(ctx context.Context, userID uuid.UUID) (UsersKey, error) {
+func (q *Queries) GetRfKeyByUserID(ctx context.Context, userID string) (UsersKey, error) {
 	row := q.db.QueryRowContext(ctx, getRfKeyByUserID, userID)
 	var i UsersKey
 	err := row.Scan(
@@ -90,14 +87,14 @@ RETURNING id, refresh_token
 `
 
 type UpdateUserRfKeyParams struct {
-	AccessTokenExpiresAt  time.Time
+	AccessTokenExpiresAt  string
 	RefreshToken          string
-	RefreshTokenExpiresAt time.Time
-	UserID                uuid.UUID
+	RefreshTokenExpiresAt string
+	UserID                string
 }
 
 type UpdateUserRfKeyRow struct {
-	ID           uuid.UUID
+	ID           string
 	RefreshToken string
 }
 

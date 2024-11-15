@@ -28,11 +28,11 @@ func (apicfg *apiConfig) handlerPostsCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	id := uuid.New()
+	id := uuid.New().String()
 	err = apicfg.DB.CreatePost(r.Context(), database.CreatePostParams{
 		ID:        id,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
+		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 		Post:      params.Post,
 		UserID:    user.ID,
 	})

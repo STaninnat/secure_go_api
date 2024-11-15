@@ -30,7 +30,7 @@ func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 			return
 		}
 
-		user, err := apicfg.DB.GetUserByID(r.Context(), claims.UserID)
+		user, err := apicfg.DB.GetUserByID(r.Context(), claims.UserID.String())
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "couldn't get user")
 			return
@@ -46,5 +46,11 @@ func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 }
 
 func isAPIKeyExpired(user database.User) bool {
-	return user.ApiKeyExpiresAt.Before(time.Now().UTC())
+	apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
+	if err != nil {
+		log.Printf("Error parsing API key expiration time: %v", err)
+		return true
+	}
+
+	return apiKeyExpiresAt.Before(time.Now().UTC())
 }

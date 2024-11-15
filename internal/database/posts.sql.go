@@ -7,9 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 const createPost = `-- name: CreatePost :exec
@@ -19,11 +16,11 @@ RETURNING id, created_at, updated_at, post, user_id
 `
 
 type CreatePostParams struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        string
+	CreatedAt string
+	UpdatedAt string
 	Post      string
-	UserID    uuid.UUID
+	UserID    string
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
@@ -42,7 +39,7 @@ const getPost = `-- name: GetPost :one
 SELECT id, created_at, updated_at, post, user_id FROM posts WHERE id = $1
 `
 
-func (q *Queries) GetPost(ctx context.Context, id uuid.UUID) (Post, error) {
+func (q *Queries) GetPost(ctx context.Context, id string) (Post, error) {
 	row := q.db.QueryRowContext(ctx, getPost, id)
 	var i Post
 	err := row.Scan(
@@ -60,7 +57,7 @@ const getPostsForUser = `-- name: GetPostsForUser :many
 SELECT id, created_at, updated_at, post, user_id FROM posts WHERE user_id = $1
 `
 
-func (q *Queries) GetPostsForUser(ctx context.Context, userID uuid.UUID) ([]Post, error) {
+func (q *Queries) GetPostsForUser(ctx context.Context, userID string) ([]Post, error) {
 	rows, err := q.db.QueryContext(ctx, getPostsForUser, userID)
 	if err != nil {
 		return nil, err
