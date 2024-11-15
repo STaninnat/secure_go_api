@@ -9,16 +9,15 @@ import (
 )
 
 func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, user database.User) {
-	newTokenExpiredAt := time.Now().UTC().Add(-24 * time.Hour).Unix()
-	newTokenExpiredAtTime := time.Unix(newTokenExpiredAt, 0)
+	newTokenExpiredAt := time.Now().UTC().Add(-24 * time.Hour)
 
 	newExpiredToken := "expired-" + uuid.New().String()[:28]
 
 	err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		UpdatedAt:             time.Now().UTC(),
-		AccessTokenExpiresAt:  newTokenExpiredAtTime,
+		AccessTokenExpiresAt:  newTokenExpiredAt,
 		RefreshToken:          newExpiredToken,
-		RefreshTokenExpiresAt: newTokenExpiredAtTime,
+		RefreshTokenExpiresAt: newTokenExpiredAt,
 		UserID:                user.ID,
 	})
 	if err != nil {
@@ -29,7 +28,7 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    "",
-		Expires:  newTokenExpiredAtTime,
+		Expires:  newTokenExpiredAt,
 		MaxAge:   -1,
 		HttpOnly: true,
 		Path:     "/",
@@ -41,7 +40,7 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
-		Expires:  newTokenExpiredAtTime,
+		Expires:  newTokenExpiredAt,
 		MaxAge:   -1,
 		HttpOnly: true,
 		Path:     "/",

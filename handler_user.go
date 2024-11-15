@@ -80,8 +80,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
-	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
+	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute)
 
 	user, err := apicfg.DB.GetUser(r.Context(), hashedApiKey)
 	if err != nil {
@@ -97,15 +96,14 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	tokenString, err := generateJWTToken(userID, apicfg.JWTSecret, jwtExpiresAtTime)
+	tokenString, err := generateJWTToken(userID, apicfg.JWTSecret, jwtExpiresAt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
 		return
 	}
 
-	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
-	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
-	refreshToken, err := generateJWTToken(userID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
+	refreshToken, err := generateJWTToken(userID, apicfg.RefreshSecret, refreshExpiresAt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
 		return
@@ -115,9 +113,9 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		ID:                    uuid.New().String(),
 		CreatedAt:             time.Now().UTC(),
 		UpdatedAt:             time.Now().UTC(),
-		AccessTokenExpiresAt:  jwtExpiresAtTime,
+		AccessTokenExpiresAt:  jwtExpiresAt,
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime,
+		RefreshTokenExpiresAt: refreshExpiresAt,
 		UserID:                user.ID,
 	})
 	if err != nil {
@@ -131,7 +129,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
-		Expires:  jwtExpiresAtTime,
+		Expires:  jwtExpiresAt,
 		SameSite: http.SameSiteStrictMode,
 		// SameSite: http.SameSiteLaxMode,
 	})
@@ -142,7 +140,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
-		Expires:  refreshExpiresAtTime,
+		Expires:  refreshExpiresAt,
 		SameSite: http.SameSiteStrictMode,
 		// SameSite: http.SameSiteLaxMode,
 	})

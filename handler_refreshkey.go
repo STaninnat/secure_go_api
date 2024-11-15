@@ -29,11 +29,8 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour).Unix()
-	newApiKeyExpiresAtTime := time.Unix(newApiKeyExpiresAt, 0)
-
-	newAccessTokenExpiresAt := time.Now().UTC().Add(1 * time.Hour).Unix()
-	newAccessTokenExpiresAtTime := time.Unix(newAccessTokenExpiresAt, 0)
+	newApiKeyExpiresAt := time.Now().UTC().Add(365 * 24 * time.Hour)
+	newAccessTokenExpiresAt := time.Now().UTC().Add(1 * time.Hour)
 
 	userID, err := uuid.Parse(user.UserID)
 	if err != nil {
@@ -42,7 +39,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newAccessToken, err := generateJWTToken(userID, apicfg.JWTSecret, newAccessTokenExpiresAtTime)
+	newAccessToken, err := generateJWTToken(userID, apicfg.JWTSecret, newAccessTokenExpiresAt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new access token")
 		return
@@ -51,7 +48,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		UpdatedAt:       time.Now().UTC(),
 		ApiKey:          newHashedApiKey,
-		ApiKeyExpiresAt: newApiKeyExpiresAtTime,
+		ApiKeyExpiresAt: newApiKeyExpiresAt,
 		ID:              user.UserID,
 	})
 	if err != nil {
@@ -59,13 +56,12 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
-	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
+	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 	err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		UpdatedAt:             time.Now().UTC(),
-		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
+		AccessTokenExpiresAt:  newAccessTokenExpiresAt,
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
+		RefreshTokenExpiresAt: newRefreshTokenExpiresAt,
 		UserID:                user.UserID,
 	})
 	if err != nil {
@@ -76,7 +72,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    newAccessToken,
-		Expires:  newAccessTokenExpiresAtTime,
+		Expires:  newAccessTokenExpiresAt,
 		HttpOnly: true,
 		Path:     "/",
 		Secure:   true,
@@ -87,7 +83,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
-		Expires:  newRefreshTokenExpiresAtTime,
+		Expires:  newRefreshTokenExpiresAt,
 		HttpOnly: true,
 		Path:     "/",
 		Secure:   true,
