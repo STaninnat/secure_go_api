@@ -3,6 +3,7 @@
 :root {
     --4px: 0.25rem;
     --8px: 0.5rem;
+    --10px: 0.625rem;
     --12px: 0.75rem;
     --16px: 1rem;
     --24px: 1.5rem;
@@ -10,11 +11,14 @@
     --40px: 2.5rem;
     --48px: 3rem;
     --56px: 3.5rem;
+    --80px: 5rem;
     --100px: 6.25rem;
     --300px: 18.75rem;
+    --380px: 23.75rem;
     --480px: 30rem;
+    --608px: 38rem;
     --768px: 48rem;
-    --1000px: 62.5rem;
+    --1024px: 64rem;
 }
 
 * {
@@ -31,7 +35,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
 }
 
 .postSection {
@@ -243,7 +247,7 @@
     font-size: var(--12px);
     color: red;
 }
-
+/* --------------------------------------------------------------------------------------- */
 nav {
     background-color: hsl(270, 75%, 34%);
     box-shadow: 0 var(--8px) var(--16px) rgba(0, 0, 0, 0.35);
@@ -260,7 +264,6 @@ nav {
 nav h1 {
     color: hsl(264, 100%, 98%);
     font-size: var(--32px);
-    border-radius: var(--8px);
     font-weight: 900;
     letter-spacing: var(--8px);
     text-transform: uppercase;
@@ -386,3 +389,347 @@ nav button:hover {
 .post:hover {
     transform: scale(1.01);
 }
+
+@media (min-width: 64em) {
+    .container button {
+        background-color: hsl(271, 100%, 20%);
+        color: hsl(264, 100%, 98%);
+        font-size: var(--12px);
+        padding: var(--12px) var(--40px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-top: var(--8px);
+        cursor: pointer;
+    }
+
+    nav h1 {
+        color: hsl(264, 100%, 98%);
+        font-size: var(--24px);
+        font-weight: 800;
+        letter-spacing: var(--4px);
+        text-transform: uppercase;
+        margin: 0;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+    }
+
+    nav button {
+        background-color: hsl(271, 91%, 9%);
+        color: hsl(264, 100%, 98%);
+        font-size: var(--12px);
+        position: absolute;
+        right: var(--40px);
+        padding: var(--12px) var(--24px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.6s ease;
+    }
+
+    .postContainer textarea {
+        width: 90%;
+        margin-top: var(--24px);
+        height: var(--100px);
+        padding: var(--12px);
+        border: 5px solid hsla(270, 75%, 34%, 0.9);
+        border-radius: 4px;
+        font-size: var(--16px);
+        resize: none;
+    }
+
+    .postContainer button {
+        background-color: hsl(271, 91%, 21%, 0.9);
+        color: hsl(264, 100%, 98%);
+        margin-top: var(--24px);
+        padding: var(--12px) var(--24px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-size: var(--16px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .postContainer h2 {
+        margin-top: var(--32px);
+        font-size: var(--24px);
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    #posts {
+        margin-top: var(--12px);
+        align-items: center;
+        width: 90%;
+        max-width: 90%;
+    }
+
+    .post {
+        background-color: hsl(0, 0%, 100%);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        font-size: var(--16px);
+        font-weight: 400;
+        line-height: 1.2;
+        letter-spacing: 0.5px;
+        padding: var(--32px) var(--40px);
+        margin: 0 auto;
+        margin-bottom: var(--16px);
+        border: 1px solid hsl(0, 0%, 87%);
+        border-radius: var(--8px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+}
+
+@media (min-width: 50em) and (max-width: 62.5em) {
+    .container {
+        background-color: hsl(264, 100%, 98%);
+        border-radius: var(--32px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+        width: var(--608px);
+        max-width: 100%;
+        min-height: var(--380px);
+    }
+
+    .container p {
+        font-size: var(--12px);
+        line-height: var(--16px);
+        letter-spacing: 0.3px;
+        margin: var(--16px) 0;
+    }
+
+    .container a {
+        color: hsl(0, 0%, 20%);
+        font-size: var(--12px);
+        text-decoration: none;
+        margin: var(--12px) 0;
+    }
+
+    .container button {
+        background-color: hsl(271, 100%, 20%);
+        color: hsl(264, 100%, 98%);
+        font-size: var(--12px);
+        padding: var(--8px) var(--40px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-top: 1px;
+        cursor: pointer;
+    }
+
+    .container form {
+        background-color: hsl(264, 100%, 98%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 var(--24px);
+        height: 100%;
+    }
+
+    .container input {
+        background-color: hsl(0, 0%, 85%);
+        border: none;
+        margin: var(--8px) 0;
+        padding: var(--12px) var(--12px);
+        font-size: var(--12px);
+        border-radius: var(--8px);
+        width: 90%;
+        outline: none;
+    }
+
+    .form-container {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        transition: all 0.6s ease-in-out;
+    }
+
+    .social-icons {
+        margin: var(--8px) 0;
+    }
+
+    .social-icons a {
+        border: 1px solid hsl(0, 0%, 80%);
+        border-radius: 20%;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 3px;
+        width: var(--32px);
+        height: var(--32px);
+    }
+
+    .toggle-panel {
+        position: absolute;
+        width: 50%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 var(--24px);
+        text-align: center;
+        top: 0;
+        transform: translateX(0);
+        transition: all 0.6s ease-in-out;
+    }
+
+    #alertCreate,
+    #alertLogin {
+        margin-top: var(--4px);
+        margin-bottom: var(--4px);
+        font-size: var(--10px);
+        color: red;
+    }
+
+    nav {
+        background-color: hsl(270, 75%, 34%);
+        box-shadow: 0 var(--8px) var(--16px) rgba(0, 0, 0, 0.35);
+        color: #fff;
+        width: 100%;
+        padding: var(--32px);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        top: 0;
+    }
+
+    nav h1 {
+        color: hsl(264, 100%, 98%);
+        font-size: var(--24px);
+        font-weight: 900;
+        letter-spacing: var(--4px);
+        text-transform: uppercase;
+        margin: 0;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+    }
+
+    nav button {
+        background-color: hsl(271, 91%, 9%);
+        color: hsl(264, 100%, 98%);
+        font-size: var(--12px);
+        position: absolute;
+        right: var(--24px);
+        padding: var(--12px) var(--24px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.6s ease;
+    }
+
+    nav button:hover {
+        background-color: hsla(271, 91%, 9%, 0.747);
+        color: hsla(264, 100%, 98%, 0.747);
+        transform: scale(1.02);
+    }
+
+    .postContainer {
+        width: 80%;
+        margin: var(--24px) auto;
+        max-width: 80%;
+        padding: var(--12px);
+        border: var(--12px) solid transparent;
+        border-radius: var(--12px);
+        background-color: hsl(264, 100%, 98%);
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #greetingMessage {
+        margin-top: var(--12px);
+        font-size: var(--24px);
+        font-weight: 600;
+    }
+
+    .postContainer textarea {
+        width: 90%;
+        margin-top: var(--16px);
+        height: var(--80px);
+        padding: var(--12px);
+        border: 5px solid hsla(270, 75%, 34%, 0.9);
+        border-radius: 4px;
+        font-size: var(--16px);
+        resize: none;
+    }
+
+    .postContainer button {
+        background-color: hsl(271, 91%, 21%, 0.9);
+        color: hsl(264, 100%, 98%);
+        margin-top: var(--24px);
+        padding: var(--10px) var(--24px);
+        border: 1px solid transparent;
+        border-radius: var(--8px);
+        font-size: var(--12px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .postContainer h2 {
+        margin-top: var(--32px);
+        font-size: var(--24px);
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .no-posts-message {
+        margin-top: var(--10px);
+        text-align: center;
+        font-size: var(--12px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: hsl(0, 0%, 53%);
+    }
+
+    #posts {
+        margin-top: var(--10px);
+        align-items: center;
+        width: 80%;
+        max-width: 80%;
+    }
+
+    .post {
+        background-color: hsl(0, 0%, 100%);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        font-size: var(--12px);
+        font-weight: 400;
+        line-height: 1.6;
+        letter-spacing: 0.5px;
+        padding: var(--24px) var(--32px);
+        margin: 0 auto;
+        margin-bottom: var(--12px);
+        border: 1px solid hsl(0, 0%, 87%);
+        border-radius: var(--8px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+}
+
