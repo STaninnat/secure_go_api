@@ -14,10 +14,10 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 
 	newExpiredToken := "expired-" + uuid.New().String()[:28]
 
-	_, err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  newTokenExpiredAtTime.Format(time.RFC3339),
+	err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		AccessTokenExpiresAt:  newTokenExpiredAtTime,
 		RefreshToken:          newExpiredToken,
-		RefreshTokenExpiresAt: newTokenExpiredAtTime.Format(time.RFC3339),
+		RefreshTokenExpiresAt: newTokenExpiredAtTime,
 		UserID:                user.ID,
 	})
 	if err != nil {

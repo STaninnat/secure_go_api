@@ -43,13 +43,13 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
-	if err != nil {
-		log.Printf("Error parsing api key expiration time: %v", err)
-		respondWithError(w, http.StatusUnauthorized, "invalid api key expiration format")
-		return
-	}
-	if apiKeyExpiresAt.Before(time.Now().UTC()) {
+	// apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
+	// if err != nil {
+	// 	log.Printf("Error parsing api key expiration time: %v", err)
+	// 	respondWithError(w, http.StatusUnauthorized, "invalid api key expiration format")
+	// 	return
+	// }
+	if user.ApiKeyExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "apikey expired")
 		return
 	}
@@ -106,20 +106,20 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  jwtExpiresAtTime.Format(time.RFC3339),
+	err = queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		AccessTokenExpiresAt:  jwtExpiresAtTime,
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime.Format(time.RFC3339),
+		RefreshTokenExpiresAt: refreshExpiresAtTime,
 		UserID:                user.ID,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			_, err = queriesTx.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
+			err = queriesTx.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
 				ID:                    uuid.New().String(),
-				CreatedAt:             time.Now().UTC().Format(time.RFC3339),
-				AccessTokenExpiresAt:  jwtExpiresAtTime.Format(time.RFC3339),
+				CreatedAt:             time.Now().UTC(),
+				AccessTokenExpiresAt:  jwtExpiresAtTime,
 				RefreshToken:          refreshToken,
-				RefreshTokenExpiresAt: refreshExpiresAtTime.Format(time.RFC3339),
+				RefreshTokenExpiresAt: refreshExpiresAtTime,
 				UserID:                user.ID,
 			})
 			if err != nil {

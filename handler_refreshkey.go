@@ -18,21 +18,21 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	refreshToken := cookie.Value
 
 	user, err := apicfg.DB.GetUserByRfKey(r.Context(), refreshToken)
-	if err != nil {
+	if err != nil || user.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "invalid or expired refresh token")
 		return
 	}
 
-	refreshTokenExpiresAt, err := time.Parse(time.RFC3339, user.RefreshTokenExpiresAt)
-	if err != nil {
-		log.Printf("Error parsing refresh token expiration time: %v", err)
-		respondWithError(w, http.StatusUnauthorized, "invalid refresh token expiration format")
-		return
-	}
-	if refreshTokenExpiresAt.Before(time.Now().UTC()) {
-		respondWithError(w, http.StatusUnauthorized, "invalid expired refresh token")
-		return
-	}
+	// refreshTokenExpiresAt, err := time.Parse(time.RFC3339, user.RefreshTokenExpiresAt)
+	// if err != nil {
+	// 	log.Printf("Error parsing refresh token expiration time: %v", err)
+	// 	respondWithError(w, http.StatusUnauthorized, "invalid refresh token expiration format")
+	// 	return
+	// }
+	// if refreshTokenExpiresAt.Before(time.Now().UTC()) {
+	// 	respondWithError(w, http.StatusUnauthorized, "invalid expired refresh token")
+	// 	return
+	// }
 
 	_, newHashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
@@ -60,7 +60,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		ApiKey:          newHashedApiKey,
-		ApiKeyExpiresAt: newApiKeyExpiresAtTime.Format(time.RFC3339),
+		ApiKeyExpiresAt: newApiKeyExpiresAtTime,
 		ID:              user.UserID,
 	})
 	if err != nil {
@@ -70,10 +70,10 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
-	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime.Format(time.RFC3339),
+	err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime.Format(time.RFC3339),
+		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
 		UserID:                user.UserID,
 	})
 	if err != nil {

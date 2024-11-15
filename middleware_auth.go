@@ -46,11 +46,11 @@ func (apicfg apiConfig) middlewareAuth(handler authhandler) http.HandlerFunc {
 }
 
 func isAPIKeyExpired(user database.User) bool {
-	apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
-	if err != nil {
-		log.Printf("Error parsing API key expiration time: %v", err)
-		return true
-	}
+	// apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
+	// if err != nil {
+	// 	log.Printf("Error parsing API key expiration time: %v", err)
+	// 	return true
+	// }
 
-	return apiKeyExpiresAt.Before(time.Now().UTC())
+	return user.ApiKeyExpiresAt.Before(time.Now().UTC())
 }
