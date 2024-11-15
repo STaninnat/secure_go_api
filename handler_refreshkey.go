@@ -23,17 +23,6 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// refreshTokenExpiresAt, err := time.Parse(time.RFC3339, user.RefreshTokenExpiresAt)
-	// if err != nil {
-	// 	log.Printf("Error parsing refresh token expiration time: %v", err)
-	// 	respondWithError(w, http.StatusUnauthorized, "invalid refresh token expiration format")
-	// 	return
-	// }
-	// if refreshTokenExpiresAt.Before(time.Now().UTC()) {
-	// 	respondWithError(w, http.StatusUnauthorized, "invalid expired refresh token")
-	// 	return
-	// }
-
 	_, newHashedApiKey, err := generateAndHashAPIKey()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new apikey")

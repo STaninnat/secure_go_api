@@ -43,12 +43,6 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
-	// if err != nil {
-	// 	log.Printf("Error parsing api key expiration time: %v", err)
-	// 	respondWithError(w, http.StatusUnauthorized, "invalid api key expiration format")
-	// 	return
-	// }
 	if user.ApiKeyExpiresAt.Before(time.Now().UTC()) {
 		respondWithError(w, http.StatusUnauthorized, "apikey expired")
 		return
