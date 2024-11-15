@@ -114,6 +114,7 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
 		ID:                    uuid.New().String(),
 		CreatedAt:             time.Now().UTC(),
+		UpdatedAt:             time.Now().UTC(),
 		AccessTokenExpiresAt:  jwtExpiresAtTime,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshExpiresAtTime,

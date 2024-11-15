@@ -15,6 +15,7 @@ func (apicfg *apiConfig) handlerLogout(w http.ResponseWriter, r *http.Request, u
 	newExpiredToken := "expired-" + uuid.New().String()[:28]
 
 	err := apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		UpdatedAt:             time.Now().UTC(),
 		AccessTokenExpiresAt:  newTokenExpiredAtTime,
 		RefreshToken:          newExpiredToken,
 		RefreshTokenExpiresAt: newTokenExpiredAtTime,

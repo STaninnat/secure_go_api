@@ -101,6 +101,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
+		UpdatedAt:             time.Now().UTC(),
 		AccessTokenExpiresAt:  jwtExpiresAtTime,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshExpiresAtTime,
@@ -111,6 +112,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			err = queriesTx.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
 				ID:                    uuid.New().String(),
 				CreatedAt:             time.Now().UTC(),
+				UpdatedAt:             time.Now().UTC(),
 				AccessTokenExpiresAt:  jwtExpiresAtTime,
 				RefreshToken:          refreshToken,
 				RefreshTokenExpiresAt: refreshExpiresAtTime,

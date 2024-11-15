@@ -29,6 +29,7 @@ type User struct {
 type UsersKey struct {
 	ID                    string
 	CreatedAt             time.Time
+	UpdatedAt             time.Time
 	AccessTokenExpiresAt  time.Time
 	RefreshToken          string
 	RefreshTokenExpiresAt time.Time

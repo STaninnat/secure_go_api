@@ -101,17 +101,23 @@ func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) 
 const updateUser = `-- name: UpdateUser :exec
 
 UPDATE users
-SET api_key = ?, api_key_expires_at = ?
+SET updated_at = ?, api_key = ?, api_key_expires_at = ?
 WHERE id = ?
 `
 
 type UpdateUserParams struct {
+	UpdatedAt       time.Time
 	ApiKey          string
 	ApiKeyExpiresAt time.Time
 	ID              string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser, arg.ApiKey, arg.ApiKeyExpiresAt, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.UpdatedAt,
+		arg.ApiKey,
+		arg.ApiKeyExpiresAt,
+		arg.ID,
+	)
 	return err
 }
