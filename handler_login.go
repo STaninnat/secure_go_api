@@ -48,8 +48,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtExpiresAt := time.Now().UTC().Add(1 * time.Hour).Unix()
-	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
+	jwtExpiresAt := time.Now().UTC().Add(1 * time.Hour)
 
 	userID, err := uuid.Parse(user.ID)
 	if err != nil {
@@ -58,7 +57,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := generateJWTToken(userID, apicfg.JWTSecret, jwtExpiresAtTime)
+	tokenString, err := generateJWTToken(userID, apicfg.JWTSecret, jwtExpiresAt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
 		return
@@ -91,10 +90,9 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	queriesTx := database.New(tx)
 
-	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
-	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
+	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 
-	refreshToken, err := generateJWTToken(userID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	refreshToken, err := generateJWTToken(userID, apicfg.RefreshSecret, refreshExpiresAt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
 		return
@@ -102,9 +100,9 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = queriesTx.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
 		UpdatedAt:             time.Now().UTC(),
-		AccessTokenExpiresAt:  jwtExpiresAtTime,
+		AccessTokenExpiresAt:  jwtExpiresAt,
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime,
+		RefreshTokenExpiresAt: refreshExpiresAt,
 		UserID:                user.ID,
 	})
 	if err != nil {
@@ -113,9 +111,9 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 				ID:                    uuid.New().String(),
 				CreatedAt:             time.Now().UTC(),
 				UpdatedAt:             time.Now().UTC(),
-				AccessTokenExpiresAt:  jwtExpiresAtTime,
+				AccessTokenExpiresAt:  jwtExpiresAt,
 				RefreshToken:          refreshToken,
-				RefreshTokenExpiresAt: refreshExpiresAtTime,
+				RefreshTokenExpiresAt: refreshExpiresAt,
 				UserID:                user.ID,
 			})
 			if err != nil {
@@ -131,7 +129,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    tokenString,
-		Expires:  jwtExpiresAtTime,
+		Expires:  jwtExpiresAt,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
@@ -142,7 +140,7 @@ func (apicfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
-		Expires:  refreshExpiresAtTime,
+		Expires:  refreshExpiresAt,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
