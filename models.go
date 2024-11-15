@@ -17,27 +17,27 @@ type User struct {
 }
 
 func databaseUserToUser(user database.User) (User, error) {
-	createdAt, err := time.Parse(time.RFC3339, user.CreatedAt)
-	if err != nil {
-		return User{}, err
-	}
+	// createdAt, err := time.Parse(time.RFC3339, user.CreatedAt)
+	// if err != nil {
+	// 	return User{}, err
+	// }
 
-	updatedAt, err := time.Parse(time.RFC3339, user.UpdatedAt)
-	if err != nil {
-		return User{}, err
-	}
+	// updatedAt, err := time.Parse(time.RFC3339, user.UpdatedAt)
+	// if err != nil {
+	// 	return User{}, err
+	// }
 
-	apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
-	if err != nil {
-		return User{}, err
-	}
+	// apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
+	// if err != nil {
+	// 	return User{}, err
+	// }
 
 	return User{
 		ID:              user.ID,
-		CreatedAt:       createdAt,
-		UpdatedAt:       updatedAt,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
 		Name:            user.Name,
-		ApiKeyExpiresAt: apiKeyExpiresAt,
+		ApiKeyExpiresAt: user.ApiKeyExpiresAt,
 	}, nil
 }
 
@@ -50,19 +50,19 @@ type Post struct {
 }
 
 func databasePostToPost(post database.Post) (Post, error) {
-	createdAt, err := time.Parse(time.RFC3339, post.CreatedAt)
-	if err != nil {
-		return Post{}, err
-	}
+	// createdAt, err := time.Parse(time.RFC3339, post.CreatedAt)
+	// if err != nil {
+	// 	return Post{}, err
+	// }
 
-	updatedAt, err := time.Parse(time.RFC3339, post.UpdatedAt)
-	if err != nil {
-		return Post{}, err
-	}
+	// updatedAt, err := time.Parse(time.RFC3339, post.UpdatedAt)
+	// if err != nil {
+	// 	return Post{}, err
+	// }
 	return Post{
 		ID:        post.ID,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+		CreatedAt: post.CreatedAt,
+		UpdatedAt: post.UpdatedAt,
 		Post:      post.Post,
 		UserID:    post.UserID,
 	}, nil

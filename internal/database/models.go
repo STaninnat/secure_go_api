@@ -4,29 +4,33 @@
 
 package database
 
+import (
+	"time"
+)
+
 type Post struct {
 	ID        string
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	Post      string
 	UserID    string
 }
 
 type User struct {
 	ID              string
-	CreatedAt       string
-	UpdatedAt       string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 	Name            string
 	Password        string
 	ApiKey          string
-	ApiKeyExpiresAt string
+	ApiKeyExpiresAt time.Time
 }
 
 type UsersKey struct {
 	ID                    string
-	CreatedAt             string
-	AccessTokenExpiresAt  string
+	CreatedAt             time.Time
+	AccessTokenExpiresAt  time.Time
 	RefreshToken          string
-	RefreshTokenExpiresAt string
+	RefreshTokenExpiresAt time.Time
 	UserID                string
 }

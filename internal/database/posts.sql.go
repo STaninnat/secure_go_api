@@ -7,18 +7,18 @@ package database
 
 import (
 	"context"
+	"time"
 )
 
 const createPost = `-- name: CreatePost :exec
 INSERT INTO posts (id, created_at, updated_at, post, user_id)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, created_at, updated_at, post, user_id
+VALUES (?, ?, ?, ?, ?)
 `
 
 type CreatePostParams struct {
 	ID        string
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	Post      string
 	UserID    string
 }
@@ -36,7 +36,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 
 const getPost = `-- name: GetPost :one
 
-SELECT id, created_at, updated_at, post, user_id FROM posts WHERE id = $1
+SELECT id, created_at, updated_at, post, user_id FROM posts WHERE id = ?
 `
 
 func (q *Queries) GetPost(ctx context.Context, id string) (Post, error) {
@@ -54,7 +54,7 @@ func (q *Queries) GetPost(ctx context.Context, id string) (Post, error) {
 
 const getPostsForUser = `-- name: GetPostsForUser :many
 
-SELECT id, created_at, updated_at, post, user_id FROM posts WHERE user_id = $1
+SELECT id, created_at, updated_at, post, user_id FROM posts WHERE user_id = ?
 `
 
 func (q *Queries) GetPostsForUser(ctx context.Context, userID string) ([]Post, error) {
