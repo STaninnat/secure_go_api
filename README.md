@@ -69,4 +69,4 @@ go build -o out && ./out
 
 ## Note
 
-Finally, I create a new Docker image from this project to google artifact registry and deploy to cloud run revision with the new image and serves the app to the public internet. This works with continuous integration(CI) and continuous deployment(CD). And I choose to use Turso database because Turso is a cloud provider that specializes in hosting serverless SQLite-like databases. It's a great fit for this project because it has a very generous free tier, and it's easy to use.
+Finally, I create a new Docker image from this project to Google Artifact Registry and deploy to Cloud Run revision with the new image and serves the app to the public internet. This works with continuous integration(CI) and continuous deployment(CD). And I choose to use Turso database because Turso is a cloud provider that specializes in hosting serverless SQLite-like databases. It's a great fit for this project because it has a very generous free tier, and it's easy to use.
