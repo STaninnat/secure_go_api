@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 :root {
+    --4px: 0.25rem;
     --8px: 0.5rem;
     --12px: 0.75rem;
     --16px: 1rem;
@@ -8,6 +9,7 @@
     --32px: 2rem;
     --40px: 2.5rem;
     --48px: 3rem;
+    --56px: 3.5rem;
     --100px: 6.25rem;
     --300px: 18.75rem;
     --480px: 30rem;
@@ -236,9 +238,9 @@
 #alertCreate,
 #alertLogin,
 #alertPost {
-    margin-top: var(--16px);
+    margin-top: var(--12px);
     margin-bottom: var(--8px);
-    font-size: var(--16px);
+    font-size: var(--12px);
     color: red;
 }
 
@@ -372,7 +374,7 @@ nav button:hover {
     font-weight: 400;
     line-height: 1.6;
     letter-spacing: 0.5px;
-    padding: var(--56px) var(--32px);
+    padding: var(--56px) var(--48px);
     margin: 0 auto;
     margin-bottom: var(--16px);
     border: 1px solid hsl(0, 0%, 87%);
