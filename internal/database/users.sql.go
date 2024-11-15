@@ -7,9 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -19,13 +16,13 @@ RETURNING id, created_at, updated_at, name, password, api_key, api_key_expires_a
 `
 
 type CreateUserParams struct {
-	ID              uuid.UUID
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID              string
+	CreatedAt       string
+	UpdatedAt       string
 	Name            string
 	Password        string
 	ApiKey          string
-	ApiKeyExpiresAt time.Time
+	ApiKeyExpiresAt string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -56,7 +53,7 @@ const getUserByID = `-- name: GetUserByID :one
 SELECT id, created_at, updated_at, name, password, api_key, api_key_expires_at FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
@@ -100,8 +97,8 @@ WHERE id = $3
 
 type UpdateUserParams struct {
 	ApiKey          string
-	ApiKeyExpiresAt time.Time
-	ID              uuid.UUID
+	ApiKeyExpiresAt string
+	ID              string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

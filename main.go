@@ -126,7 +126,6 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	if apicfg.DB != nil {
-		log.Println("Configuring /v1 API endpoints")
 		v1Router.Post("/users", apicfg.handlerUsersCreate)
 		v1Router.Get("/users", apicfg.middlewareAuth(apicfg.handlerUsersGet))
 

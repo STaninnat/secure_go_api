@@ -66,13 +66,13 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 	apiKeyExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour)
 
 	user, err := apicfg.DB.CreateUser(r.Context(), database.CreateUserParams{
-		ID:              uuid.New(),
-		CreatedAt:       time.Now().UTC(),
-		UpdatedAt:       time.Now().UTC(),
+		ID:              uuid.New().String(),
+		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
+		UpdatedAt:       time.Now().UTC().Format(time.RFC3339),
 		Name:            params.Name,
 		Password:        string(hashedPassword),
 		ApiKey:          hashedApiKey,
-		ApiKeyExpiresAt: apiKeyExpiresAt,
+		ApiKeyExpiresAt: apiKeyExpiresAt.Format(time.RFC3339),
 	})
 	if err != nil {
 		log.Printf("Error while creating user: %v", err)
@@ -82,7 +82,15 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 
 	jwtExpiresAt := time.Now().UTC().Add(15 * time.Minute).Unix()
 	jwtExpiresAtTime := time.Unix(jwtExpiresAt, 0)
-	tokenString, err := generateJWTToken(user.ID, apicfg.JWTSecret, jwtExpiresAtTime)
+
+	userID, err := uuid.Parse(user.ID)
+	if err != nil {
+		log.Printf("Error parsing user ID: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "invalid user ID")
+		return
+	}
+
+	tokenString, err := generateJWTToken(userID, apicfg.JWTSecret, jwtExpiresAtTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate access token")
 		return
@@ -90,18 +98,18 @@ func (apicfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Reque
 
 	refreshExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 	refreshExpiresAtTime := time.Unix(refreshExpiresAt, 0)
-	refreshToken, err := generateJWTToken(user.ID, apicfg.RefreshSecret, refreshExpiresAtTime)
+	refreshToken, err := generateJWTToken(userID, apicfg.RefreshSecret, refreshExpiresAtTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate refresh token")
 		return
 	}
 
 	_, err = apicfg.DB.CreateUserRfKey(r.Context(), database.CreateUserRfKeyParams{
-		ID:                    uuid.New(),
-		CreatedAt:             time.Now().UTC(),
-		AccessTokenExpiresAt:  jwtExpiresAtTime,
+		ID:                    uuid.New().String(),
+		CreatedAt:             time.Now().UTC().Format(time.RFC3339),
+		AccessTokenExpiresAt:  jwtExpiresAtTime.Format(time.RFC3339),
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshExpiresAtTime,
+		RefreshTokenExpiresAt: refreshExpiresAtTime.Format(time.RFC3339),
 		UserID:                user.ID,
 	})
 	if err != nil {

@@ -4,11 +4,10 @@ import (
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
-	"github.com/google/uuid"
 )
 
 type User struct {
-	ID              uuid.UUID `json:"id"`
+	ID              string    `json:"id"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 	Name            string    `json:"name"`
@@ -18,30 +17,52 @@ type User struct {
 }
 
 func databaseUserToUser(user database.User) (User, error) {
+	createdAt, err := time.Parse(time.RFC3339, user.CreatedAt)
+	if err != nil {
+		return User{}, err
+	}
+
+	updatedAt, err := time.Parse(time.RFC3339, user.UpdatedAt)
+	if err != nil {
+		return User{}, err
+	}
+
+	apiKeyExpiresAt, err := time.Parse(time.RFC3339, user.ApiKeyExpiresAt)
+	if err != nil {
+		return User{}, err
+	}
+
 	return User{
 		ID:              user.ID,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
+		CreatedAt:       createdAt,
+		UpdatedAt:       updatedAt,
 		Name:            user.Name,
-		Password:        user.Password,
-		ApiKey:          user.ApiKey,
-		ApiKeyExpiresAt: user.ApiKeyExpiresAt,
+		ApiKeyExpiresAt: apiKeyExpiresAt,
 	}, nil
 }
 
 type Post struct {
-	ID        uuid.UUID `json:"id"`
+	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Post      string    `json:"post"`
-	UserID    uuid.UUID `json:"user_id"`
+	UserID    string    `json:"user_id"`
 }
 
 func databasePostToPost(post database.Post) (Post, error) {
+	createdAt, err := time.Parse(time.RFC3339, post.CreatedAt)
+	if err != nil {
+		return Post{}, err
+	}
+
+	updatedAt, err := time.Parse(time.RFC3339, post.UpdatedAt)
+	if err != nil {
+		return Post{}, err
+	}
 	return Post{
 		ID:        post.ID,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 		Post:      post.Post,
 		UserID:    post.UserID,
 	}, nil

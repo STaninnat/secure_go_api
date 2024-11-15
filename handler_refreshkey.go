@@ -1,10 +1,12 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/STaninnat/capstone_project/internal/database"
+	"github.com/google/uuid"
 )
 
 func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Request) {
@@ -16,8 +18,19 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	refreshToken := cookie.Value
 
 	user, err := apicfg.DB.GetUserByRfKey(r.Context(), refreshToken)
-	if err != nil || user.RefreshTokenExpiresAt.Before(time.Now().UTC()) {
+	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid or expired refresh token")
+		return
+	}
+
+	refreshTokenExpiresAt, err := time.Parse(time.RFC3339, user.RefreshTokenExpiresAt)
+	if err != nil {
+		log.Printf("Error parsing refresh token expiration time: %v", err)
+		respondWithError(w, http.StatusUnauthorized, "invalid refresh token expiration format")
+		return
+	}
+	if refreshTokenExpiresAt.Before(time.Now().UTC()) {
+		respondWithError(w, http.StatusUnauthorized, "invalid expired refresh token")
 		return
 	}
 
@@ -32,7 +45,14 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	newAccessTokenExpiresAt := time.Now().UTC().Add(1 * time.Hour).Unix()
 	newAccessTokenExpiresAtTime := time.Unix(newAccessTokenExpiresAt, 0)
-	newAccessToken, err := generateJWTToken(user.UserID, apicfg.JWTSecret, newAccessTokenExpiresAtTime)
+
+	userID, err := uuid.Parse(user.UserID)
+	if err != nil {
+		log.Printf("Error parsing user ID: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "invalid user ID")
+		return
+	}
+	newAccessToken, err := generateJWTToken(userID, apicfg.JWTSecret, newAccessTokenExpiresAtTime)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't generate new access token")
 		return
@@ -40,7 +60,7 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 
 	err = apicfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		ApiKey:          newHashedApiKey,
-		ApiKeyExpiresAt: newApiKeyExpiresAtTime,
+		ApiKeyExpiresAt: newApiKeyExpiresAtTime.Format(time.RFC3339),
 		ID:              user.UserID,
 	})
 	if err != nil {
@@ -51,9 +71,9 @@ func (apicfg *apiConfig) handlerRefreshKey(w http.ResponseWriter, r *http.Reques
 	newRefreshTokenExpiresAt := time.Now().UTC().Add(30 * 24 * time.Hour).Unix()
 	newRefreshTokenExpiresAtTime := time.Unix(newRefreshTokenExpiresAt, 0)
 	_, err = apicfg.DB.UpdateUserRfKey(r.Context(), database.UpdateUserRfKeyParams{
-		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime,
+		AccessTokenExpiresAt:  newAccessTokenExpiresAtTime.Format(time.RFC3339),
 		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime,
+		RefreshTokenExpiresAt: newRefreshTokenExpiresAtTime.Format(time.RFC3339),
 		UserID:                user.UserID,
 	})
 	if err != nil {

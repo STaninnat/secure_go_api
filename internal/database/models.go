@@ -4,35 +4,29 @@
 
 package database
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 type Post struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        string
+	CreatedAt string
+	UpdatedAt string
 	Post      string
-	UserID    uuid.UUID
+	UserID    string
 }
 
 type User struct {
-	ID              uuid.UUID
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID              string
+	CreatedAt       string
+	UpdatedAt       string
 	Name            string
 	Password        string
 	ApiKey          string
-	ApiKeyExpiresAt time.Time
+	ApiKeyExpiresAt string
 }
 
 type UsersKey struct {
-	ID                    uuid.UUID
-	CreatedAt             time.Time
-	AccessTokenExpiresAt  time.Time
+	ID                    string
+	CreatedAt             string
+	AccessTokenExpiresAt  string
 	RefreshToken          string
-	RefreshTokenExpiresAt time.Time
-	UserID                uuid.UUID
+	RefreshTokenExpiresAt string
+	UserID                string
 }
