@@ -1,4 +1,4 @@
-# Capstone Project
+# Secure Go API Project
 
 ![code coverage badge](https://github.com/STaninnat/capstone_project/actions/workflows/ci.yml/badge.svg)
 ![code coverage badge](https://github.com/STaninnat/capstone_project/actions/workflows/cd.yml/badge.svg)
